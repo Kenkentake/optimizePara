@@ -1,0 +1,12 @@
+CellSwc[0] CellSwc[0]
+----------
+0 0 Chemi Ach 1 67348
+10 10 Chemi Ach 1 67349
+20 20 Chemi Ach 1 67350
+30 30 Chemi Ach 1 67351
+40 40 Chemi Ach 1 67352
+50 50 Chemi Ach 1 67353
+60 60 Chemi Ach 1 67354
+70 70 Chemi Ach 1 67355
+80 80 Chemi Ach 1 67356
+90 90 Chemi Ach 1 67357

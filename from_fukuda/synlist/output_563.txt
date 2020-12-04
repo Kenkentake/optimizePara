@@ -1,0 +1,16 @@
+CellSwc[46] CellSwc[6]
+----------
+237 5606 Chemi GABA 19 5720
+243 5608 Chemi GABA 6 5721
+236 5616 Chemi GABA 25 5722
+242 5895 Chemi GABA 10 5723
+0 0 Chemi Ach 1 5724
+10 10 Chemi Ach 1 5725
+20 20 Chemi Ach 1 5726
+30 30 Chemi Ach 1 5727
+40 40 Chemi Ach 1 5728
+50 50 Chemi Ach 1 5729
+60 60 Chemi Ach 1 5730
+70 70 Chemi Ach 1 5731
+80 80 Chemi Ach 1 5732
+90 90 Chemi Ach 1 5733

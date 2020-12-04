@@ -1,0 +1,33 @@
+CellSwc[11] CellSwc[33]
+----------
+6 337 Chemi ACh 4 29121
+24 339 Chemi ACh 4 29122
+52 322 Chemi ACh 4 29123
+61 73 Chemi ACh 1 29124
+3 338 Chemi ACh 1 29125
+1 270 Gap nil 4 29126
+49 218 Chemi ACh 3 29127
+62 286 Chemi ACh 2 29128
+23 304 Chemi ACh 2 29129
+57 215 Gap nil 2 29130
+53 146 Chemi ACh 1 29131
+51 115 Chemi ACh 1 29132
+9 272 Chemi ACh 2 29133
+40 41 Chemi ACh 1 29134
+58 319 Chemi ACh 1 29135
+12 236 Chemi ACh 2 29136
+19 422 Gap nil 1 29137
+46 67 Chemi ACh 1 29138
+31 198 Chemi ACh 1 29139
+15 373 Gap nil 1 29140
+60 149 Chemi ACh 1 29141
+0 0 Chemi Ach 1 29142
+10 10 Chemi Ach 1 29143
+20 20 Chemi Ach 1 29144
+30 30 Chemi Ach 1 29145
+40 40 Chemi Ach 1 29146
+50 50 Chemi Ach 1 29147
+60 60 Chemi Ach 1 29148
+70 70 Chemi Ach 1 29149
+80 80 Chemi Ach 1 29150
+90 90 Chemi Ach 1 29151
