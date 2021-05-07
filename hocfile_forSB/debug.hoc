@@ -1,0 +1,160 @@
+//*************************
+// debug.hoc
+//*************************
+
+proc execSimulation(){ local i, root, fitness, tempfit, flg_cmaes_terminate, num_of_pop_per_procs, dim_cmaes, num_of_targetfile, timestep, log_fitness, output_id, output_id2, start_timing, loop_counter, elapse_time localobj rcv_pop_vec_weight, rcv_pop_vec_delay, send_fit_vec, nullvec, tempvec, vec, send_fit_vec2
+    
+    num_of_pop_per_procs = $1
+    dim_cmaes = $2
+    num_of_targetfile = $3
+    timestep = $4
+    log_fitness = $5
+    
+    //{pc.set_parent_comm()}
+    
+    //{receiveInfo()}
+    num_of_pop_per_procs = receiveInfoAndPassData()
+    
+    root = 0
+    nullvec = new Vector()
+    tempvec = new Vector()
+    
+    {pc.set_world_comm()}
+    {pc.barrier()}
+    
+    //kore iruka??
+    //vec = readParamFile()
+    //updateParams_tmp(vec)
+    
+    //TODO: reset arg[3]
+    output_id = detectOutputProc(NCELLS, pc.nhost, 0)
+    output_id2 = detectOutputProc(NCELLS, pc.nhost, 1)
+    printf("output_id = %d, output_id2 = %d\n", output_id, output_id2)
+
+    {pc.set_maxstep(10)}
+    {finitialize(v_init)}
+    {fcurrent()}
+    {stdinit()}
+    //setNetStimTest(NCELL)
+    
+    loop_counter = 0
+    
+    while(1){
+	elapse_time = startsw()
+	loop_counter = loop_counter + 1
+	{pc.set_parent_comm()}
+	
+	rcv_pop_vec_weight = new Vector()
+	rcv_pop_vec_delay = new Vector()
+	send_fit_vec = new Vector(num_of_pop_per_procs)
+	send_fit_vec2 = new Vector(num_of_pop_per_procs)
+	
+	//printf("num_of_pop_per_procs in execSimulation (in hocfile) is %d\n", num_of_pop_per_procs)
+	//recieve weight data
+	pc.scatter_d(nullvec, rcv_pop_vec_weight, dim_cmaes * num_of_pop_per_procs, root)
+	printf("rcv_pop_vec_weight.size = %d\n", rcv_pop_vec_weight.size())
+	//recieve delay data
+	elapse_time = startsw() - elapse_time
+	if(pc.id==0){
+	    printf("%dth elapse time of scatter time in NEURON procs is %lf\n", loop_counter, elapse_time)
+	}
+	
+	
+	{pc.set_world_comm()}
+	elapse_time = startsw()
+	//the number of loop = the number of particle this process has..
+	for(i=0; i<num_of_pop_per_procs; i+=1){
+	    
+	    fitness = 0.0
+	    //updateParams(rcv_pop_vec)
+	    //updateParams2(rcv_pop_vec_weight, rcv_pop_vec_delay, i * dim_cmaes)
+	    update_weight(rcv_pop_vec_weight, i)
+	    //setStimShort(NCELL, timestep, 100, 10)
+	    //initModel
+	    pc.barrier()
+	    //printf("start psolove (%d times)\n",start_timing)
+	    
+	    // set to all the cells and i can get information of all cells
+	    {setSpikeRecord(NCELLS)}
+	    
+	    stdinit()
+	    
+	    
+	    //TODO: need to change
+	    //	    pc.psolve(timestep)//timestep = tstop in original file
+	    prun()
+
+	    tempfit = evalFitness()
+	    tempfit += evalFitness2()
+	    //if fitness converted to log_fitness, write here like below
+	    if(log_fitness == 1){
+		if(tempfit == 0){
+		    tempfit = -1e100
+		}else{
+		    tempfit = log10(tempfit)
+		}
+	    }
+	    fitness += tempfit
+	    
+	    send_fit_vec.x(i) = fitness
+	    send_fit_vec2.x(i) = fitness
+	}
+	pc.broadcast(send_fit_vec, output_id)
+	pc.broadcast(send_fit_vec2, output_id2)
+	
+	if(output_id!=output_id2){
+	    for(i=0; i<num_of_pop_per_procs; i+=1){
+		send_fit_vec.x(i) += send_fit_vec2.x(i)
+	    }
+	}
+	for(i=0; i<num_of_pop_per_procs; i+=1){
+	    printf("send_fit_vec.x(%d) = %lf\n", i, send_fit_vec.x(i))
+	}
+
+	
+	elapse_time = startsw() - elapse_time
+	if(pc.id==0){
+	    printf("%dth elapse time of main NEURON procs is %lf\n", loop_counter, elapse_time)
+	}
+	{pc.set_parent_comm()}
+	elapse_time = startsw()
+	pc.gather_d(send_fit_vec, nullvec, num_of_pop_per_procs, root)
+	elapse_time = startsw() - elapse_time
+	if(pc.id==0){
+	    printf("%dth elapse time of gather in NEURON procs is %lf\n", loop_counter, elapse_time)
+	}
+	
+	//check whether terminal criterion of cmaes holds
+	elapse_time = startsw()
+	pc.broadcast(tempvec, root)
+	elapse_time = startsw() - elapse_time
+	if(pc.id==0 && loop_counter==4){
+	    printf("elapse time of bcast in NEURON procs is %lf\n", elapse_time)
+	}
+	
+	flg_cmaes_terminate = int(tempvec.x(0))
+	//flg_cmaes_termination = 1 //for break test, inevitably breaking the loop
+	if(flg_cmaes_terminate != 0) {break}
+	//printf("I dont still break (%d times)\n", loop_counter)
+    }
+}
+
+{execSimulation(1, 2, 3, 4, 5)}
+
+//proc execSimulation(){ local arg_1, arg_2, arg_3, arg_4, arg_5, i, root, fitness, tempfit, flg_cmaes_terminate, num_of_pop_per_procs, dim_cmaes, num_of_targetfile, timestep, log_fitness, output_id, output_id2, start_timing, loop_counter, elapse_time localobj rcv_pop_vec_weight, rcv_pop_vec_delay, send_fit_vec, nullvec, tempvec, vec, send_fit_vec2
+//    
+//    arg_1 = $1
+//    arg_2 = $2
+//    arg_3 = $3
+//    arg_4 = $4
+//    arg_5 = $5
+//
+//    sum = arg_1 + arg_2 + arg_3 + arg_4 + arg_5
+//    printf("--------------\n")
+//    printf("This is Test\n")
+//    printf("Sum is %d\n", sum)
+//    printf("--------------\n")
+//}
+
+
+execSimulation(1, 2, 3, 4/2, 5)
