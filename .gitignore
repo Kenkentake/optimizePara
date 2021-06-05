@@ -18,6 +18,7 @@ cma_tweann_test/*
 ./exec_results/*
 
 special
+estimate_main
 
 # Object files
 *.o
