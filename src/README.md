@@ -1,5 +1,5 @@
 # src
-Steps to run estimate_main in src
+Steps to run estimate_main in src on Cluster
 #### 1. Copy mod files to Neuron Kplus
 ```
 $ cp *.mod ~/neuron_kplus/mod
