@@ -17,7 +17,7 @@ cma_tweann_test/*
 ./test*
 ./exec_results/*
 
-./src/special
+special
 
 # Object files
 *.o
