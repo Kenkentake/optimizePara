@@ -1,0 +1,14 @@
+# src
+Steps to run estimate_main in src
+#### 1. Copy mod files to Neuron Kplus
+```
+$ cp *.mod ~/neuron_kplus/mod
+```
+
+#### 2. Compile Neuron Kplus
+Check [here](https://github.com/sc4brain/neuron_kplus)
+
+#### 3. Compile and run estimate_main
+```
+$ ./run_estimate_main.sh
+```
