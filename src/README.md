@@ -7,6 +7,9 @@ $ cp *.mod ~/neuron_kplus/mod
 
 #### 2. Compile Neuron Kplus
 Check [here](https://github.com/sc4brain/neuron_kplus)
+```
+$ cp ~/neuron_kplus/specials/x86_64/special ./
+```
 
 #### 3. Compile and run estimate_main
 ```
