@@ -1,8 +1,9 @@
 TARGET = estimate_main
-CC = mpicc
-CFLAGS = -O3 -Wall
-#CC = mpifccpx
-#CFLAGS = -Kfast
+# for cluster
+# CC = mpicc
+# CFLAGS = -O3 -Wall -g
+CC = mpifccpx
+CFLAGS = -Kfast
 LDFLAGS = -lm
 INCLUDES = -I.
 LIBS = -lm
