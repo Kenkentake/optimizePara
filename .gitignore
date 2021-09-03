@@ -22,3 +22,9 @@ estimate_main
 
 # Object files
 *.o
+
+# Execute files
+estimate_main
+make_neuro_spawn
+test_est_target
+
