@@ -1,0 +1,14 @@
+#NEURON LIST
+#--------------------
+#<NCELLS>
+#<CELLname>, <cellswc>
+#--------------------
+#DATE : 2021/10/22
+
+6
+N001 ../hocfile_forSB/test_6_swcs/Swc_UN_1062_1.swc
+N002 ../hocfile_forSB/test_6_swcs/Swc_UN_1062_2.swc
+N003 ../hocfile_forSB/test_6_swcs/Swc_UN_1062_3.swc
+N004 ../hocfile_forSB/test_6_swcs/Swc_UN_1062_4.swc
+N005 ../hocfile_forSB/test_6_swcs/Swc_UN_1062_5.swc
+N006 ../hocfile_forSB/test_6_swcs/Swc_UN_1062_6.swc
