@@ -45,7 +45,10 @@ int main(int argc, char **argv){
 
     char specials[] = "../hocfile_forSB/x86_64/special";
     char *neuron_argv[] = {"-mpi", "-nobanner", "../hocfile_forSB/networkSimulation.hoc", NULL};
-    int neuron_mode = 0;
+
+    // 2021/11/30
+    // int neuron_mode = 0;
+    int neuron_mode = 1;
 
     char connection_data[256] = "../data/conMat.txt";
     FILE *fp;
@@ -87,13 +90,13 @@ int main(int argc, char **argv){
       sprintf(exec_prog, "%s", argv[4]);
       spawn_argvs = (char **)malloc(sizeof(char *) * spawn_argv_size);
       if(spawn_argvs==NULL){
-	printf("memory allocation error occurs @{spawn_argvs}\n");
+        printf("memory allocation error occurs @{spawn_argvs}\n");
       }
       for(i=0;i<spawn_argv_size;++i){
-	spawn_argvs[i] = (char *)malloc(sizeof(char) * 256);
-	if(spawn_argvs[i]==NULL){
-	  printf("memory allocation error occurs @{spawn_argvs[%d]}\n", i);
-	}
+        spawn_argvs[i] = (char *)malloc(sizeof(char) * 256);
+        if(spawn_argvs[i]==NULL){
+          printf("memory allocation error occurs @{spawn_argvs[%d]}\n", i);
+        }
       }
       sprintf(spawn_argvs[0], "%d", num_of_my_pop);
       sprintf(spawn_argvs[2], "%d", dimension);
@@ -111,7 +114,7 @@ int main(int argc, char **argv){
       num_of_cell_combination = dim_conMat * dim_conMat;
       sprintf(spawn_argvs[1], "%d", num_of_cell_combination);
     }
-    num_of_procs_nrn = dim_conMat;
+    // num_of_procs_nrn = dim_conMat;
     if(argc > 6){
       sprintf(connection_data, "%s", argv[6]);
       printf("connection_data = %s\n", connection_data);
@@ -180,11 +183,21 @@ int main(int argc, char **argv){
       //printf("\n");
     }
 
+    printf("############### num of nrn procs ################################\n");
+    printf("num_of_procs_nrn = %d\n", num_of_procs_nrn);
+    printf("############### spawn_argvs (child -> grandchild) ###############\n");
+    printf("spawn_argvs[0](num_of_my_pop) = %s\n", spawn_argvs[0]);
+    printf("spawn_argvs[1](num_of_cell_combination) = %s\n", spawn_argvs[1]);
+    printf("spawn_argvs[2](dimension) = %s\n", spawn_argvs[2]);
+    printf("spawn_argvs[3] = %s\n", spawn_argvs[3]);
+    printf("#################################################################\n");
+
     /* make spawn of NEURON procs and make new intracommunicator 'nrn_comm'*/
     /* when it does not work, uncomment the below sentense*/
     /* for(i=0; i < 8; ++i){ */
     /* 	if(spawn_parent_rank%8 == i){ */
-    MPI_Comm_spawn(exec_prog, spawn_argvs, num_of_procs_nrn, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
+    MPI_Comm_spawn(exec_prog, neuron_argv, num_of_procs_nrn, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
+    // MPI_Comm_spawn(exec_prog, spawn_argvs, num_of_procs_nrn, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
     MPI_Intercomm_merge(intercomm, 0, &nrn_comm);
     MPI_Comm_size(nrn_comm, &spawn_size);
     MPI_Comm_rank(nrn_comm, &spawn_myid);
@@ -325,6 +338,10 @@ int main(int argc, char **argv){
     free(arFunvals_child_buf2);
     free(arFunvals_whole_buf);
     free(arFunvals_whole);
+    // add free newly
+    free(pop_rcvbuf_whole);
+    free(pop_sendbuf_nrn_weight_adjust_dim);
+
    
     for(i=0;i<dim_conMat;++i){
 	free(conMat[i]);

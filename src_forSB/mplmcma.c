@@ -637,6 +637,7 @@ void LMCMA(mplmcma_t *t)
 	//this loop is not necessary for the current implementation
 
 	//in main
+    printf("################# MAIN OF MPLMCMA ################ \n");
 	for(i=0; i<t->lambda; ++i){
 	    if (sign == 1)
 	    { 
@@ -674,19 +675,40 @@ void LMCMA(mplmcma_t *t)
 	    /* 	t->scatter_sendvec_d[i*(t->N/2)+k+(t->num_of_pop_per_spawn*(int)(t->N/2))] = t->x_temp[k+t->N/2]; */
 	    /* } */
 	    for(k=0; k<t->N; ++k){
-		t->scatter_sendvec[i*t->N+k+(t->num_of_pop_per_spawn * t->N)] = t->x_temp[k];
+            // t->scatter_sendvec[i*t->N+k+(t->num_of_pop_per_spawn * t->N)] = t->x_temp[k];
+            t->scatter_sendvec[i*t->N+k+(t->num_of_pop_per_spawn * t->N)] = 777;
 	    }
 		    
 	    if (t->sample_symmetry)
 		sign = -sign;
 	}//end of generate gene information
+
+    // printf("################# END MAIN OF MPLMCMA ################ \n");
+    printf("t->scatter_sendvec_d[0] = %d\n", (*t).scatter_sendvec[0]);
+    // printf("t->scatter_rcvvec_d[0] = %d\n", t->scatter_rcvvec[0]);
+	// printf("t->scatter information: sendnum = %d\n", t->num_of_pop_per_spawn * t->N); 
+    // printf("t->scatter_rcvvec = %d\n", t->scatter_rcvvec);
+    // printf("t->spawn_comm = %d\n", t->spawn_comm);
+    // for(i=0; i<t->N; ++i){
+    for(i=0; i<200; ++i){
+        // printf("t->scatter_sendvec_d[%d] = %d\n", i, t->scatter_sendvec[i]);
+    }
+    printf("len of scatter_sendvec = %zu\n", sizeof((*t).scatter_sendvec) / sizeof(((*t).scatter_sendvec)[0]));
+    // printf("len of scatter_rcvvec = %zu\n", sizeof(t->scatter_rcvvec) / sizeof(int));
+    printf("t->N = %d\n", t->N);
+    // printf("t->num_of_pop_per_spawn = %d\n", t->num_of_pop_per_spawn);
+    // for (i=0; )
+
 	
 	//printf("t->scatter information: sendnum = %d\n", t->num_of_pop_per_spawn * t->N / 2); 
 
-	//scatter gene information from parent to child, and from child to grandchild	    
-//	MPI_Scatter(t->scatter_sendvec_w, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, t->scatter_rcvvec_w, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, 0, t->spawn_comm); // in main and make_neuro_spawn
-//	MPI_Scatter(t->scatter_sendvec_d, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, t->scatter_rcvvec_d, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, 0, t->spawn_comm); // in main and make_neuro_spawn
+	//scatter gene information from parent to child, and from child to grandchild
+    //MPI_Scatter(t->scatter_sendvec_w, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, t->scatter_rcvvec_w, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, 0, t->spawn_comm); // in main and make_neuro_spawn
+
+    // printf("################# END MAIN OF MPLMCMA ################ \n");
+    // MPI_Scatter(t->scatter_sendvec_d, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, t->scatter_rcvvec_d, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, 0, t->spawn_comm); // in main and make_neuro_spawn
 	MPI_Scatter(t->scatter_sendvec, t->num_of_pop_per_spawn * t->N, MPI_DOUBLE, t->scatter_rcvvec, t->num_of_pop_per_spawn * t->N, MPI_DOUBLE, 0, t->spawn_comm);
+    // printf("############## RUN HERE ################ \n");
 	//MPI_Scatter(,,,nrn_comm); //in make_neuro_spawn and NEURON
 	
 	//calculation in NEURON process
@@ -851,6 +873,7 @@ void LMCMA(mplmcma_t *t)
 	    t->flg_termination = 1;
 	}
 	loop_count++;
+    // printf("############## TIMES LOOP FINISH ################ \n");
 	printf("%d times loop finish. fbest = %lf\n", loop_count, BestF);
 	//t->flg_termination=1;
 	MPI_Bcast(&t->flg_termination, 1, MPI_DOUBLE, 0, t->spawn_comm);
@@ -894,20 +917,20 @@ int loadRangeFile(char *filename, double *xmin_vec, double *xmax_vec, int *N){
 
     FILE *fp=NULL;
     if((fp=fopen(filename, "r"))==NULL){
-	printf("file open error\n");
-	exit(EXIT_FAILURE);
+        printf("file open error\n");
+        exit(EXIT_FAILURE);
     }
     while( fgets(buf, TEXT_BUFFER_SIZE, fp) != NULL){
-	if(strncmp(buf, "#", 1) == 0){ continue;}
-	sscanf(buf, "%*s\t%lf\t%lf\t%*lf\t%d\n", &lowerBounds[dimension], &upperBounds[dimension], &flg_log[dimension]);
-	//flg_log[dimension] = (unsigned char)atoi((const char*)&flg_log[dimension]);
-	dimension++;//make the dimension information here
+        if(strncmp(buf, "#", 1) == 0){ continue;}
+        sscanf(buf, "%*s\t%lf\t%lf\t%*lf\t%d\n", &lowerBounds[dimension], &upperBounds[dimension], &flg_log[dimension]);
+        //flg_log[dimension] = (unsigned char)atoi((const char*)&flg_log[dimension]);
+        dimension++;//make the dimension information here
     }
     *N = dimension;
     for(i=0;i<(*N);++i){
-	xmin_vec[i] = lowerBounds[i];
-	xmax_vec[i] = upperBounds[i];
-	printf("lowerBounds[%d] = %lf, upperBounds[%d] = %lf, flg_log[%d] = %d\n", i, lowerBounds[i], i, upperBounds[i], i, flg_log[i]);
+        xmin_vec[i] = lowerBounds[i];
+        xmax_vec[i] = upperBounds[i];
+        printf("lowerBounds[%d] = %lf, upperBounds[%d] = %lf, flg_log[%d] = %d\n", i, lowerBounds[i], i, upperBounds[i], i, flg_log[i]);
     }
     fclose(fp);
     return 0;
