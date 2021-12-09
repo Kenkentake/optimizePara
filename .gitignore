@@ -28,3 +28,5 @@ estimate_main
 make_neuro_spawn
 test_est_target
 
+# job results
+src_forSB/past_jobs/*
