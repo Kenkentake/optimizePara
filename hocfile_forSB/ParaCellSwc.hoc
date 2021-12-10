@@ -70,12 +70,16 @@ proc p_mkcells() { local i, j, cellnum localobj cell, namestring, nc, datafile s
     //--- read list ---
     readlist($s1)     
 
+	printf("NCELLS is %d\n", NCELLS)
     for (i = 0; i < NCELLS; i += 1) {	
+    printf("pc.nhost is %d\n", pc.nhost)
+    printf("pc.id is %d\n", pc.id)
+    // 割り付け
 	if(i % pc.nhost == pc.id || $2 == 1){
 	    if(swclist.scanstr(name) != -1){
 		//--- cell name ---
 		namestring = new String(name)
-//		printf("namestring is %s\n", name)
+		printf("namestring is %s\n", name)
 		cellnames.append(namestring)
 
 		//--- cell data file ---
@@ -85,7 +89,7 @@ proc p_mkcells() { local i, j, cellnum localobj cell, namestring, nc, datafile s
 		//--- append to the list ---
 		cells.append(cell)
 		cellnum = cells.count() - 1
-		//print "Cell Number : " , cellnum, " of the pc_id : ", pc.id
+		print "Cell Number : " , cellnum, " of the pc_id : ", pc.id
 		
 		//--- area set ---
 

@@ -87,13 +87,13 @@ int main(int argc, char **argv){
       sprintf(exec_prog, "%s", argv[4]);
       spawn_argvs = (char **)malloc(sizeof(char *) * spawn_argv_size);
       if(spawn_argvs==NULL){
-	printf("memory allocation error occurs @{spawn_argvs}\n");
+        printf("memory allocation error occurs @{spawn_argvs}\n");
       }
       for(i=0;i<spawn_argv_size;++i){
-	spawn_argvs[i] = (char *)malloc(sizeof(char) * 256);
-	if(spawn_argvs[i]==NULL){
-	  printf("memory allocation error occurs @{spawn_argvs[%d]}\n", i);
-	}
+        spawn_argvs[i] = (char *)malloc(sizeof(char) * 256);
+        if(spawn_argvs[i]==NULL){
+          printf("memory allocation error occurs @{spawn_argvs[%d]}\n", i);
+        }
       }
       sprintf(spawn_argvs[0], "%d", num_of_my_pop);
       sprintf(spawn_argvs[2], "%d", dimension);

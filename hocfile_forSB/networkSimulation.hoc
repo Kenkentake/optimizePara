@@ -10,6 +10,11 @@ if (debugon) {
     print "debug mode"
 }
 
+printf("############ newtworkSimulation.hoc #############\n")
+printf("system\n")
+system("free -g")
+printf("system\n")
+
 //--- parallel ----
 objref pc
 pc = new ParallelContext()
@@ -24,32 +29,37 @@ allvm = new Vector()
 //------------------------------
 // make cells
 // (code is in ParaCellSwc.hoc)
-p_mkcells("../hocfile_forSB/list/neuronlist.txt", 0)
+p_mkcells("../hocfile_forSB/list/neuronlist_6.txt", 0)
+
+printf("############ ARIVED HERE #############")
 
 proc minimumnetstim(){ local i  localobj namesf strdef tmp
     namesf = new StringFunctions()
 
     for(i = 0; i < cells.count(); i += 1){
-	tmp = cellnames.o(i).s
-	//print tmp
+	    tmp = cellnames.o(i).s
+	    //print tmp
 	
-	p_mkstim_ic(0, 1, 1, 1000, 0)
-	if(namesf.substr(tmp, "orn") != -1){
-	    p_mkstim_ic(pc.nhost * i + pc.id, 500, 1, 200, 0)
-	    print  pc.nhost * i + pc.id
-	}
+	    p_mkstim_ic(0, 1, 1, 1000, 0)
+	    if(namesf.substr(tmp, "orn") != -1){
+	        p_mkstim_ic(pc.nhost * i + pc.id, 500, 1, 200, 0)
+	        print  pc.nhost * i + pc.id
+	    }
     }
 }
 minimumnetstim()
 
+
+printf("##### 001 #####\n")
 proc mknetPos(){ local tmp
     for (i=0; i < NCELLS; i+=1){
-	tmp = int(i / 5)
-	p_translation( i , tmp * 100, tmp * 100, tmp * 100)
+	    tmp = int(i / 5)
+	    p_translation( i , tmp * 100, tmp * 100, tmp * 100)
     }
 }
 
 mknetPos()
+printf("##### 002 #####\n")
 
 //------------------------------
 
@@ -62,6 +72,7 @@ forall {
 }
 
 forall insert hh
+printf("##### 003 #####\n")
 
 //------------------------------
 
@@ -71,6 +82,7 @@ forall insert hh
 
 {load_file("../hocfile_forSB/readSynList.hoc")}
 {load_file("../hocfile_forSB/importSynList.hoc")}
+printf("##### 004 #####\n")
 
 //------------------------------
 
@@ -79,10 +91,11 @@ func numchild() { local ii localobj sl
     sl = new SectionList()
     sl.children()
     forsec sl {
-	ii += 1
+	    ii += 1
     }
     return ii
 }
+printf("##### 005 #####\n")
 
 //------------------------------
 // zapping
@@ -90,15 +103,17 @@ func numchild() { local ii localobj sl
 
 {load_file("../hocfile_forSB/zapping.hoc")}
 zapping(zapdegree)
+printf("##### 006 #####\n")
 
 double zaplen[cells.count + 1] // + 1 is for pc.id with cell.count = 0
 for j = 0, cells.count - 1 {
     zaplen[j] = 0
     forsec zaplist[j] {
-	zaplen[j] += 1
+	    zaplen[j] += 1
     }
 }
 
+printf("##### 007 #####\n")
 
 //------------------------------
 
@@ -120,17 +135,20 @@ if (debugon) {
     nframe = 0
 }
 
+printf("##### 008 #####\n")
+
 tstop = 500
 if(debugon) {tstop = 0.01}
 dt = 0.01          // number of calculation
+// changed 2021/10/04
+// dt = 0.001          // number of calculation
 nstep_steprun = 1   // number of steps
 
 saveframe = 0
 
 proc pstep() { local i, j
     for i = 1, nstep_steprun {
-	fadvance() // include : t = t + dt
-	
+	    fadvance() // include : t = t + dt
     }
     // check
     if ( t/dt % 10 == 0) {printf(".")}
@@ -159,12 +177,14 @@ proc pstep() { local i, j
 
 //------------------------------
 
+printf("##### 009 #####\n")
 
 
 // involved to evolutionary computation section
 
 DIM_CMAES = NCELLS * NCELLS
-NUM_OF_POP_PER_PROCS = 16 //redefine by MPI_Bcast from parent C process
+// NUM_OF_POP_PER_PROCS = 16 //redefine by MPI_Bcast from parent C process
+NUM_OF_POP_PER_PROCS = 1 //redefine by MPI_Bcast from parent C process
 
 recordBin = 62.5 //default 125 in single compartment implementation
 numFitLoop = tstop / recordBin
@@ -175,25 +195,39 @@ HIGH_F = 80
 LOW_F = 24
 F_FLIP = HIGH_F + LOW_F //for evaluate output2's flip F (toward output1's)
 
+printf("##### 010 #####\n")
+
 for index = 0, fittingVec.size()-1 {
     if(index%5 == 0 || index%5==1){
-	fittingVec.x(index) = HIGH_F
+	    fittingVec.x(index) = HIGH_F
     }else if(index%5==3 || index%5==4){
-	fittingVec.x(index) = LOW_F
+	    fittingVec.x(index) = LOW_F
     }else{
-	fittingVec.x(index) = (HIGH_F + LOW_F) / 2
+	    fittingVec.x(index) = (HIGH_F + LOW_F) / 2
     }
 }
 
 load_file("../hocfile_forSB/record.hoc") //TODO: copy and modify!
 
+printf("##### 011 #####\n")
+
 func receiveInfoAndPassData() { local root, num_of_pop_per_split localobj vec
-    root = 0
+    root = 0 // (got time out job error)
+    // got no error in case of root = 1
+
+    // 2021/11/29
+    // root = 1
+
     vec = new Vector(3)
+    printf("##### 024.1 #####\n")
     pc.broadcast(vec, root)
+    printf("##### 024.2 #####\n")
     num_of_pop_per_split = int(vec.x(0))
+    printf("##### 024.3 #####\n")
     return num_of_pop_per_split
 }
+
+printf("##### 012 #####\n")
 
 //TODO: modify cell_id that is the target of evaluation!!
 //TODO: also change the index in record.hoc
@@ -204,16 +238,17 @@ func evalFitness(){ local sum, scaleFactor, n, i, tmpFreq localobj hoge
     
     // calc the fitness here under construction
     if(pc.gid_exists(0)){// temporary set 0
-	for i = 0, fittingVec.size() - 1  {
-	    tmpFreq = getFreq(recordBin * i, recordBin * 2)//250ms bin overlapped each 125ms
-	    //printf("freq(%d ~ %d) is %d\t", recordBin * i, recordBin * (i+1), tmpFreq)
-	    sum += (tmpFreq - fittingVec.x(i)) * (tmpFreq - fittingVec.x(i))
-	}
+	    for i = 0, fittingVec.size() - 1  {
+	        tmpFreq = getFreq(recordBin * i, recordBin * 2)//250ms bin overlapped each 125ms
+	        //printf("freq(%d ~ %d) is %d\t", recordBin * i, recordBin * (i+1), tmpFreq)
+	        sum += (tmpFreq - fittingVec.x(i)) * (tmpFreq - fittingVec.x(i))
+	    }
 	//printf("\n")
     }
-    
     return sum * scaleFactor
 }
+
+printf("##### 013 #####\n")
 
 func evalFitness2(){ local sum, scaleFactor, n, i, tmpFreq localobj hoge
     //define fitness function. under construction
@@ -222,45 +257,50 @@ func evalFitness2(){ local sum, scaleFactor, n, i, tmpFreq localobj hoge
     
     // calc the fitness here under construction
     if(pc.gid_exists(1)){// temporary set 1
-	for i = 0, fittingVec.size() - 1  {
-	    tmpFreq = getFreq2(recordBin * i, recordBin * 2)//250ms bin overlapped each 125ms
-	    //printf("freq(%d ~ %d) is %d\t", recordBin * i, recordBin * (i+1), tmpFreq)
-	    sum += (tmpFreq + fittingVec.x(i) - F_FLIP) * (tmpFreq + fittingVec.x(i) - F_FLIP)
-	}
+	    for i = 0, fittingVec.size() - 1  {
+	        tmpFreq = getFreq2(recordBin * i, recordBin * 2)//250ms bin overlapped each 125ms
+	        //printf("freq(%d ~ %d) is %d\t", recordBin * i, recordBin * (i+1), tmpFreq)
+	        sum += (tmpFreq + fittingVec.x(i) - F_FLIP) * (tmpFreq + fittingVec.x(i) - F_FLIP)
+	    }
 	//printf("\n")
     }
-    
     return sum * scaleFactor
 }
 
 //TODO: redifine the output_id (which cell is output) in main too!!
+
+printf("##### 014 #####\n")
 
 func detectOutputProc(){local i, proc_id, num_cell, div, nhost, output_cell_number
     num_cell = $1
     nhost = $2
     output_cell_number = $3
     if(num_cell <= nhost){
-	proc_id = output_cell_number
-	return proc_id
+	    proc_id = output_cell_number
+	    return proc_id
     }else{
-	div = int((output_cell_number / nhost))
-	proc_id = num_cell - div * nhost - 1
-	return proc_id
+	    div = int((output_cell_number / nhost))
+	    proc_id = num_cell - div * nhost - 1
+	    return proc_id
     }
 }
+
+printf("##### 015 #####\n")
 //needless?
 func detectOutputProc2(){local i, proc_id, num_cell, div, nhost
     num_cell = $1
     nhost = $2
     if((num_cell / 2) < nhost){
-	proc_id = 1//num_cell / 2
-	return proc_id
+	    proc_id = 1//num_cell / 2
+	    return proc_id
     }else{
-	div = int((num_cell / 2) / nhost)
-	proc_id = num_cell/2 - div * nhost
-	return proc_id
+	    div = int((num_cell / 2) / nhost)
+	    proc_id = num_cell/2 - div * nhost
+	    return proc_id
     }
 }
+
+printf("##### 016 #####\n")
 
 //update NetCon weight of Chemi synpases
 
@@ -270,6 +310,8 @@ for i=0, NCELLS*NCELLS-1{
     update_test_vec.x(i) = i
 }
 
+printf("##### 017 #####\n")
+
 objref test_vec_scatter
 genes = 1
 test_vec_scatter = new Vector(NCELLS * cells.count * genes)
@@ -277,6 +319,8 @@ for i=0, NCELLS*cells.count*genes -1{
     test_vec_scatter.x(i) = i + pc.id * NCELLS * cells.count * genes
 //    printf("test_vec.x(%d) is %g\n", i, test_vec_scatter.x(i))
 }
+
+printf("##### 018 #####\n")
 
 // assume that informed by scater (x,x,x,x,x,0,0,0,0,0,0,0,0)
 proc update_weight(){local i, j, syn_count, cell_count, start_idx localobj update_vec
@@ -293,22 +337,48 @@ proc update_weight(){local i, j, syn_count, cell_count, start_idx localobj updat
     // for i=0, nclist_chemi.count -1{
     // 	printf("nclist_chemi.o(%d).weight is %lf\n", i, nclist_chemi.o(i).weight)
     // }
+
+    // check how to work
+    printf("check update_weight\n")
+    update_vec.printf()
+    printf("NCELLS is %d\n", NCELLS)
+    for i=0, NCELLS - 1{
+        printf("pc.gid_exists(%d) is %d\n", i, pc.gid_exists(i))
+        if(pc.gid_exists(i)){
+            printf("pc.gid_exists(%d) is True\n", pc.gid_exists(i))
+        }
+    }
+    printf("update_vec.size is %d\n", update_vec.size())
+    printf("start_idx is %d\n", start_idx)
+    printf("cells.count is %d\n", cells.count)
+    printf("cell_count is %d\n", cell_count)
+    printf("end check update_weight\n")
+
+
     syn_count = 0
     cell_count = 0
+    printf("##### 029.1 #####\n")
     for i=0, NCELLS - 1{
-	if(pc.gid_exists(i)){
-	    for j=0, NCELLS - 1{
-		for k=0, num_synapse_mat.x[i][j] - 1{
-		    printf("update_vec.x(%d) = %lf\n", start_idx * NCELLS * cells.count + cell_count * NCELLS + j, update_vec.x(start_idx * NCELLS * cells.count + cell_count * NCELLS + j))
-		    nclist_chemi.o(syn_count).weight = update_vec.x(start_idx*NCELLS*cells.count + cell_count*NCELLS + j)
-		    printf("nclist_chemi.o(%d).weight = %lf\n", syn_count, nclist_chemi.o(syn_count).weight)
-		    syn_count += 1
-		}
+	    if(pc.gid_exists(i)){
+	        for j=0, NCELLS - 1{
+                printf("num_synapse_mat.x[%d][%d] is %d\n", i, j, num_synapse_mat.x[i][j])
+	    	    for k=0, num_synapse_mat.x[i][j] - 1{
+                    printf("i is %d\n", i)
+                    printf("j is %d\n", j)
+                    printf("cell_count is %d\n", cell_count)
+	    	        printf("update_vec.x(%d) = %lf\n", start_idx * NCELLS * cells.count + cell_count * NCELLS + j, update_vec.x(start_idx * NCELLS * cells.count + cell_count * NCELLS + j))
+	    	        nclist_chemi.o(syn_count).weight = update_vec.x(start_idx*NCELLS*cells.count + cell_count*NCELLS + j)
+	    	        printf("nclist_chemi.o(%d).weight = %lf\n", syn_count, nclist_chemi.o(syn_count).weight)
+	    	        syn_count += 1
+	    	    }
+	        }
+	        cell_count += 1
 	    }
-	    cell_count += 1
-	}
     }
+    printf("##### 029.2 #####\n")
 }
+
+printf("##### 019 #####\n")
 
 proc execSimulation(){ local i, root, fitness, tempfit, flg_cmaes_terminate, num_of_pop_per_procs, dim_cmaes, num_of_targetfile, timestep, log_fitness, output_id, output_id2, start_timing, loop_counter, elapse_time localobj rcv_pop_vec_weight, rcv_pop_vec_delay, send_fit_vec, nullvec, tempvec, vec, send_fit_vec2
     
@@ -317,15 +387,25 @@ proc execSimulation(){ local i, root, fitness, tempfit, flg_cmaes_terminate, num
     num_of_targetfile = $3
     timestep = $4
     log_fitness = $5
+
+    printf("##### 023 #####\n")
+    
     
     {pc.set_parent_comm()}
+    printf("##### 024 #####\n")
     
     //{receiveInfo()}
+    // 2021/10/05
     num_of_pop_per_procs = receiveInfoAndPassData()
     
-    root = 0
+    // root = 0
     nullvec = new Vector()
-    tempvec = new Vector()
+    // tempvec = new Vector()
+    tempvec = new Vector(1)
+    printf("tempvec.size() is %d\n", tempvec.size())
+    printf("tempvec.x[0] is %f\n", tempvec.x[0])
+
+    printf("##### 025 #####\n")
     
     {pc.set_world_comm()}
     {pc.barrier()}
@@ -345,108 +425,141 @@ proc execSimulation(){ local i, root, fitness, tempfit, flg_cmaes_terminate, num
     {stdinit()}
     //setNetStimTest(NCELL)
     
+    printf("##### 026 #####\n")
+        
     loop_counter = 0
     
     while(1){
-	elapse_time = startsw()
-	loop_counter = loop_counter + 1
-	{pc.set_parent_comm()}
-	
-	rcv_pop_vec_weight = new Vector()
-	rcv_pop_vec_delay = new Vector()
-	send_fit_vec = new Vector(num_of_pop_per_procs)
-	send_fit_vec2 = new Vector(num_of_pop_per_procs)
-	
-	//printf("num_of_pop_per_procs in execSimulation (in hocfile) is %d\n", num_of_pop_per_procs)
-	//recieve weight data
-	pc.scatter_d(nullvec, rcv_pop_vec_weight, dim_cmaes * num_of_pop_per_procs, root)
-	printf("rcv_pop_vec_weight.size = %d\n", rcv_pop_vec_weight.size())
-	//recieve delay data
-	elapse_time = startsw() - elapse_time
-	if(pc.id==0){
-	    printf("%dth elapse time of scatter time in NEURON procs is %lf\n", loop_counter, elapse_time)
-	}
-	
-	
-	{pc.set_world_comm()}
-	elapse_time = startsw()
-	//the number of loop = the number of particle this process has..
-	for(i=0; i<num_of_pop_per_procs; i+=1){
+	    elapse_time = startsw()
+	    loop_counter = loop_counter + 1
+        printf("##### 026.1 #####\n")
+	    {pc.set_parent_comm()}
 	    
-	    fitness = 0.0
-	    //updateParams(rcv_pop_vec)
-	    //updateParams2(rcv_pop_vec_weight, rcv_pop_vec_delay, i * dim_cmaes)
-	    update_weight(rcv_pop_vec_weight, i)
-	    //setStimShort(NCELL, timestep, 100, 10)
-	    //initModel
-	    pc.barrier()
-	    //printf("start psolove (%d times)\n",start_timing)
+	    rcv_pop_vec_weight = new Vector()
+	    rcv_pop_vec_delay = new Vector()
+	    send_fit_vec = new Vector(num_of_pop_per_procs)
+	    send_fit_vec2 = new Vector(num_of_pop_per_procs)
+        printf("##### 026.2 #####\n")
 	    
-	    // set to all the cells and i can get information of all cells
-	    {setSpikeRecord(NCELLS)}
-	    
-	    stdinit()
-	    
-	    
-	    //TODO: need to change
-	    //	    pc.psolve(timestep)//timestep = tstop in original file
-	    prun()
-
-	    tempfit = evalFitness()
-	    tempfit += evalFitness2()
-	    //if fitness converted to log_fitness, write here like below
-	    if(log_fitness == 1){
-		if(tempfit == 0){
-		    tempfit = -1e100
-		}else{
-		    tempfit = log10(tempfit)
-		}
+	    //printf("num_of_pop_per_procs in execSimulation (in hocfile) is %d\n", num_of_pop_per_procs)
+	    //recieve weight data
+	    printf("rcv_pop_vec_weight.size = %d\n", rcv_pop_vec_weight.size())
+	    printf("dim_cmaes = %d\n", dim_cmaes)
+	    printf("num_of_pop_per_procs = %d\n", num_of_pop_per_procs)
+	    pc.scatter_d(nullvec, rcv_pop_vec_weight, dim_cmaes * num_of_pop_per_procs, root)
+	    printf("rcv_pop_vec_weight.size = %d\n", rcv_pop_vec_weight.size())
+	    //recieve delay data
+	    elapse_time = startsw() - elapse_time
+        printf("##### 026.3 #####\n")
+	    if(pc.id==0){
+	        printf("%dth elapse time of scatter time in NEURON procs is %lf\n", loop_counter, elapse_time)
 	    }
-	    fitness += tempfit
+        printf("##### 027 #####\n")
 	    
-	    send_fit_vec.x(i) = fitness
-	    send_fit_vec2.x(i) = fitness
-	}
-	pc.broadcast(send_fit_vec, output_id)
-	pc.broadcast(send_fit_vec2, output_id2)
-	
-	if(output_id!=output_id2){
+	    {pc.set_world_comm()}
+	    elapse_time = startsw()
+        printf("##### 028 #####\n")
+	    //the number of loop = the number of particle this process has..
 	    for(i=0; i<num_of_pop_per_procs; i+=1){
-		send_fit_vec.x(i) += send_fit_vec2.x(i)
-	    }
-	}
-	for(i=0; i<num_of_pop_per_procs; i+=1){
-	    printf("send_fit_vec.x(%d) = %lf\n", i, send_fit_vec.x(i))
-	}
+            printf("i: %d, num_of_pop_per_procs: %d", i, num_of_pop_per_procs)
+	        
+            
+	        fitness = 0.0
+	        //updateParams(rcv_pop_vec)
+	        //updateParams2(rcv_pop_vec_weight, rcv_pop_vec_delay, i * dim_cmaes)
+            printf("##### 029 #####\n")
+	        update_weight(rcv_pop_vec_weight, i)
+	        //setStimShort(NCELL, timestep, 100, 10)
+	        //initModel
+            printf("##### 030 #####\n")
+	        pc.barrier()
+	        //printf("start psolove (%d times)\n",start_timing)
+            printf("##### 031 #####\n")
+	        
+	        // set to all the cells and i can get information of all cells
+	        {setSpikeRecord(NCELLS)}
+            printf("##### 032 #####\n")
+	        
+	        stdinit()
+            printf("##### 033 #####\n")
+	        
+	        
+	        
+	        //TODO: need to change
+	        //	    pc.psolve(timestep)//timestep = tstop in original file
+	        prun()
+            printf("##### 034 #####\n")
 
-	
-	elapse_time = startsw() - elapse_time
-	if(pc.id==0){
-	    printf("%dth elapse time of main NEURON procs is %lf\n", loop_counter, elapse_time)
-	}
-	{pc.set_parent_comm()}
-	elapse_time = startsw()
-	pc.gather_d(send_fit_vec, nullvec, num_of_pop_per_procs, root)
-	elapse_time = startsw() - elapse_time
-	if(pc.id==0){
-	    printf("%dth elapse time of gather in NEURON procs is %lf\n", loop_counter, elapse_time)
-	}
-	
-	//check whether terminal criterion of cmaes holds
-	elapse_time = startsw()
-	pc.broadcast(tempvec, root)
-	elapse_time = startsw() - elapse_time
-	if(pc.id==0 && loop_counter==4){
-	    printf("elapse time of bcast in NEURON procs is %lf\n", elapse_time)
-	}
-	
-	flg_cmaes_terminate = int(tempvec.x(0))
-	//flg_cmaes_termination = 1 //for break test, inevitably breaking the loop
-	if(flg_cmaes_terminate != 0) {break}
-	//printf("I dont still break (%d times)\n", loop_counter)
+	        tempfit = evalFitness()
+	        tempfit += evalFitness2()
+	        //if fitness converted to log_fitness, write here like below
+	        if(log_fitness == 1){
+	    	    if(tempfit == 0){
+	    	        tempfit = -1e100
+	    	    }else{
+	    	        tempfit = log10(tempfit)
+	    	    }
+	        }
+            printf("##### 035 #####\n")
+	        fitness += tempfit
+	        
+	        send_fit_vec.x(i) = fitness
+	        send_fit_vec2.x(i) = fitness
+	    }
+	    pc.broadcast(send_fit_vec, output_id)
+	    pc.broadcast(send_fit_vec2, output_id2)
+        printf("##### 036 #####\n")
+	    
+	    if(output_id!=output_id2){
+	        for(i=0; i<num_of_pop_per_procs; i+=1){
+	    	    send_fit_vec.x(i) += send_fit_vec2.x(i)
+	        }
+	    }
+	    for(i=0; i<num_of_pop_per_procs; i+=1){
+	        printf("send_fit_vec.x(%d) = %lf\n", i, send_fit_vec.x(i))
+	    }
+        printf("##### 037 #####\n")
+
+	    
+	    elapse_time = startsw() - elapse_time
+	    if(pc.id==0){
+	        printf("%dth elapse time of main NEURON procs is %lf\n", loop_counter, elapse_time)
+	    }
+	    {pc.set_parent_comm()}
+	    elapse_time = startsw()
+	    pc.gather_d(send_fit_vec, nullvec, num_of_pop_per_procs, root)
+	    elapse_time = startsw() - elapse_time
+	    if(pc.id==0){
+	        printf("%dth elapse time of gather in NEURON procs is %lf\n", loop_counter, elapse_time)
+	    }
+        printf("##### 038 #####\n")
+	    
+	    //check whether terminal criterion of cmaes holds
+	    elapse_time = startsw()
+
+        // 2021/11/29
+        // root = 1
+        printf("root is %d\n", root)
+
+	    pc.broadcast(tempvec, root)
+	    elapse_time = startsw() - elapse_time
+	    if(pc.id==0 && loop_counter==4){
+	        printf("elapse time of bcast in NEURON procs is %lf\n", elapse_time)
+	    }
+        printf("##### 039 #####\n")
+	    
+	    flg_cmaes_terminate = int(tempvec.x(0))
+        printf("##### 039.1 #####\n")
+	    //flg_cmaes_termination = 1 //for break test, inevitably breaking the loop
+	    if(flg_cmaes_terminate != 0) {break}
+        printf("##### 039.2 #####\n")
+	    printf("I dont still break (%d times)\n", loop_counter)
+        printf("##### 039.3 #####\n")
     }
+    printf("##### 040 #####\n")
 }
 
+printf("##### 020 #####\n")
 
 //------------------------------
 // parallel simulation control 
@@ -456,21 +569,41 @@ proc pcontinue() {local time, timestep, i strdef recfilename
     // while(t < tstop){
     // 	pstep()
     // }
-    timestep = dt * 40
+    // timestep = dt * 40
+    timestep = dt * 1
+    printf("tstop is %d\n", tstop)
+    // tstop is 500
+    // timestep is 0.0125
+    printf("timestep is %f\n", timestep)
     for(time=0;time<tstop;time+=timestep){
-	pc.psolve(time+timestep)
-	pc.barrier()
-	// for(i=0;i<cells.count;i+=1){
-	//     sprint(recfilename, "../hocfile_forSB/visualize/%dCell_t_%.6f.dat", pc.id + i * pc.nhost, t)
-	//     cells.o(i).saveData(recfilename)
-	// }
+        printf("##### 033.1 #####\n")
+        printf("time : %f, tstop : %d, timestep : %f\n", time, tstop, timestep)
+        // This process (pc.psolve) takes time
+	    pc.psolve(time+timestep)
+        printf("##### 033.2 #####\n")
+	    pc.barrier()
+        printf("##### 033.3 #####\n")
+        printf("t is %f\n", t)
+	    for(i=0;i<cells.count;i+=1){
+	        sprint(recfilename, "../hocfile_forSB/visualize/%dCell_t_%.6f.dat", pc.id + i * pc.nhost, t)
+            printf("##### 033.4 #####\n")
+            printf("recfilename is %s\n", recfilename)
+            printf("pc.id is %d\n", pc.id)
+	        cells.o(i).saveData(recfilename)
+            printf("##### 033.5 #####\n")
+	    }
     }
 }
 
+printf("##### 021 #####\n")
+
 proc prun() {
     init()
+    printf("##### 033.0 #####\n")
     pcontinue()
 }
+
+printf("##### 022 #####\n")
 
 elapse_time = startsw()
 //prun()
@@ -480,7 +613,9 @@ printf("elapse time is %g\n", elapse_time)
 //------------------------------
 {pc.runworker()}
 
+printf("##### 998 #####\n")
 if (!debugon) {
     {pc.done()}    
     //quit()
 }
+printf("##### 999 #####\n")

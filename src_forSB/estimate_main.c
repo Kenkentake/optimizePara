@@ -75,17 +75,18 @@ int main(int argc, char **argv){
       sprintf(range_filename, "%s", argv[9]);
     }
     
+    printf("range_filename is %s\n", range_filename);
     loadRangeFile(range_filename, xmin_tmp, xmax_tmp, &t.N);
     N = t.N;
 
     if((dim_con_mat * dim_con_mat)!=N){
       dim_con_mat = 1;
       while(1){
-	if((dim_con_mat * dim_con_mat)>=N){
-	  break;
-	}else{
-	  dim_con_mat++;
-	}
+        if((dim_con_mat * dim_con_mat)>=N){
+          break;
+        }else{
+          dim_con_mat++;
+        }
       }
     }
     printf("dim_con_mat = %d\n", dim_con_mat);
@@ -100,7 +101,7 @@ int main(int argc, char **argv){
       t.maxevals = maxevals = atoi(argv[4]);
       maxevals *= lambda;
       t.maxevals *= lambda;
-      t.num_of_nrn_procs = atoi(argv[5]);
+      t.num_of_nrn_procs = num_of_nrn_procs = atoi(argv[5]);
       sprintf(exec_prog, "%s", argv[6]);
     }
     
@@ -136,6 +137,18 @@ int main(int argc, char **argv){
 	t.sigma[i] = sigma_vec[i] = 0.5 * (xmax_vec[i] - xmin_vec[i]);
     }
 
+    printf("############### num of nrn procs ################################\n");
+    printf("spawn_numprocs = %d\n", spawn_numprocs);
+    printf("############### spawn_argv (parant -> child) ####################\n");
+    printf("spawn_argv[0](num_of_pop_per_child) = %s\n", spawn_argv[0]);
+    printf("spawn_argv[1](N = num of parameters = dimension) = %s\n", spawn_argv[1]);
+    printf("spawn_argv[2](num_of_nrn_procs) = %s\n", spawn_argv[2]);
+    printf("spawn_argv[3](exec_prog) = %s\n", spawn_argv[3]);
+    printf("spawn_argv[4](dim_con_mat) = %s\n", spawn_argv[4]);
+    printf("spawn_argv[5](connection_data) = %s\n", spawn_argv[5]);
+    printf("spawn_argv[6] = %s\n", spawn_argv[6]);
+    printf("#################################################################\n");
+
     printf("start comm spawn\n");
     MPI_Comm_spawn(command, spawn_argv, spawn_numprocs, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
     MPI_Intercomm_merge(intercomm, 0, &spawn_comm);
@@ -152,8 +165,8 @@ int main(int argc, char **argv){
 
     printf("start LMCMA\n");
     LMCMA(&t);
-    //LMCMA(t.N, t.lambda, t.mu, t.ccov, t.xmin, t.xmax, t.nvectors, t.maxsteps, t.cc, t.val_target, t.sigma, t.c_s, t.target_f, t.maxevals, t.inseed, output, t.printToFile, t.sample_symmetry, t.spawn_comm, t.spawn_numprocs, &t);
-    //LMCMA(N, lambda, mu, ccov, xmin_vec, xmax_vec, nvectors, maxsteps, cc, val_target, sigma_vec, c_s, target_f, maxevals, inseed, output, printToFile, sample_symmetry, spawn_comm, spawn_numprocs);
+    // LMCMA(t.N, t.lambda, t.mu, t.ccov, t.xmin, t.xmax, t.nvectors, t.maxsteps, t.cc, t.val_target, t.sigma, t.c_s, t.target_f, t.maxevals, t.inseed, output, t.printToFile, t.sample_symmetry, t.spawn_comm, t.spawn_numprocs, &t);
+    // LMCMA(N, lambda, mu, ccov, xmin_vec, xmax_vec, nvectors, maxsteps, cc, val_target, sigma_vec, c_s, target_f, maxevals, inseed, output, printToFile, sample_symmetry, spawn_comm, spawn_numprocs);
     printf("end of LMCMA\n");
 
     MPI_Comm_free(&intercomm);
