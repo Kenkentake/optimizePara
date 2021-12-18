@@ -44,8 +44,7 @@ int main(int argc, char **argv){
     int spawn_argv_size=4;
 
     char specials[] = "../hocfile_forSB/x86_64/special";
-    // char *neuron_argv[] = {"-mpi", "-nobanner", "../hocfile_forSB/networkSimulation.hoc", NULL};
-    char *neuron_argv[] = {"-mpi", "/home/hp200177/u00690/neuron_kplus/hoc/test_gather.hoc", NULL};
+    char *neuron_argv[] = {"-mpi", "-nobanner", "../hocfile_forSB/networkSimulation.hoc", NULL};
 
     // 2021/11/30
     // int neuron_mode = 0;
@@ -214,7 +213,7 @@ int main(int argc, char **argv){
     double info[] = {1.0, 1.0, 1.0};
     info[0] = num_of_my_pop; 
     if(neuron_mode){
-      printf("MPI_Bcast_info_to_NEURON");
+      printf("MPI_Bcast_info_to_NEURON")
       MPI_Bcast_to_NEURON(info, send_count, MPI_DOUBLE, 0, nrn_comm);
     }
 
@@ -324,7 +323,7 @@ int main(int argc, char **argv){
 	MPI_Bcast(&flg_termination, 1, MPI_DOUBLE, 0, spawn_parent_comm);
 
 	if(neuron_mode){
-      printf("MPI_Bcast_&flg_termination_to_NEURON");
+      printf("MPI_Bcast_&flg_termination_to_NEURON")
 	  MPI_Bcast_to_NEURON(&flg_termination, 1, MPI_DOUBLE, 0, nrn_comm);
 	}else{
 	  MPI_Bcast(&flg_termination, 1, MPI_DOUBLE, 0, nrn_comm);
@@ -346,8 +345,8 @@ int main(int argc, char **argv){
     free(arFunvals_whole_buf);
     free(arFunvals_whole);
     // add free newly
-    // free(pop_rcvbuf_whole);
-    // free(pop_sendbuf_nrn_weight_adjust_dim);
+    free(pop_rcvbuf_whole);
+    free(pop_sendbuf_nrn_weight_adjust_dim);
 
    
     for(i=0;i<dim_conMat;++i){
