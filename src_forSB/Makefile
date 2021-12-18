@@ -4,7 +4,7 @@ TARGET = estimate_main
 # CFLAGS = -O3 -Wall -g
 CC = mpifccpx
 
-CFLAGS = -Kfast -g -NRtrap
+CFLAGS = -Kfast -g -NRtrap -DDEB
 
 LDFLAGS = -lm
 INCLUDES = -I.

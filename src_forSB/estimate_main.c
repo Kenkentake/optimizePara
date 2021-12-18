@@ -46,7 +46,11 @@ int main(int argc, char **argv){
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &main_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &main_myid);
-
+#ifdef DEB
+    // use info only for debug
+    MPI_Info info;
+    MPI_Info_create(&info);
+#endif
     MPI_Comm_get_parent(&parentcomm);
 
     xmin_tmp = (double *)malloc(sizeof(double) * MAX_NUM_PARAM);
@@ -58,7 +62,10 @@ int main(int argc, char **argv){
     for(i=0;i<spawn_argv_size;++i){
       spawn_argv[i] = (char *)malloc(sizeof(char) * 256);
     }
+#ifdef DEB
+  #else
     spawn_argv[spawn_argv_size-1] = NULL;
+  #endif
     exec_prog = (char *)malloc(sizeof(char) * 256);
     if(exec_prog==NULL){
       printf("memory allocation error occurs @{exec_prog}\n");
@@ -150,7 +157,23 @@ int main(int argc, char **argv){
     printf("#################################################################\n");
 
     printf("start comm spawn\n");
-    MPI_Comm_spawn(command, spawn_argv, spawn_numprocs, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
+ 
+ 
+  #ifdef DEB
+    //for debug
+     MPI_Info_set(info, "fjdbg_spawn_dir_name", "spawn_test");
+     char *debcommand[2]={"gdb_wrapper",NULL};
+     //for abnormal termination
+     //     char *debarg[6]={"-fjdbg-sig","all","-fjdbg-out-dir","log",command,spawn_argv,NULL};
+    //for dead-locking
+     char *debarg[5]={"-fjdbg-dlock","-fjdbg-out-dir","log",command,spawn_argv,NULL};
+     MPI_Comm_spawn(debcommand[0], debarg, spawn_numprocs, info, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
+  #else
+
+    //original   
+        MPI_Comm_spawn(command, spawn_argv, spawn_numprocs, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
+  #endif
+
     MPI_Intercomm_merge(intercomm, 0, &spawn_comm);
     MPI_Comm_size(spawn_comm, &spawn_size);
     MPI_Comm_rank(spawn_comm, &spawn_myid);

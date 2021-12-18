@@ -42,11 +42,14 @@ int main(int argc, char **argv){
     char *exec_prog=NULL;
     char **spawn_argvs=NULL;
     int spawn_argv_size=4;
+#ifdef KAZ
+    char specials[] = "/home/hp200177/u00684/work2/fneuron_kplus/specials/sparc64";
+    char *neuron_argv[] = {"-mpi", "/home/hp200177/u00690/neuron_kplus/hoc/test_gather.hoc", NULL};
+#else    
 
-    char specials[] = "../hocfile_forSB/x86_64/special";
     // char *neuron_argv[] = {"-mpi", "-nobanner", "../hocfile_forSB/networkSimulation.hoc", NULL};
     char *neuron_argv[] = {"-mpi", "/home/hp200177/u00690/neuron_kplus/hoc/test_gather.hoc", NULL};
-
+#endif
     // 2021/11/30
     // int neuron_mode = 0;
     int neuron_mode = 1;
@@ -62,6 +65,11 @@ int main(int argc, char **argv){
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &main_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &main_myid);
+    #ifdef DEB
+    // use info only for debug
+    MPI_Info spinfo;
+    MPI_Info_create(&spinfo);
+    #endif
 
     /* make new intracommunicator for communicating with the parent process*/
     MPI_Comm_get_parent(&parentcomm);
@@ -192,7 +200,22 @@ int main(int argc, char **argv){
     printf("spawn_argvs[2](dimension) = %s\n", spawn_argvs[2]);
     printf("spawn_argvs[3] = %s\n", spawn_argvs[3]);
     printf("#################################################################\n\n");
+#ifdef DEB
+    unsigned char sp-args[256];
+    
+    //for debug add some definition of variales
+    MPI_Info_set(spinfo, "fjdbg_spawn_dir_name", "spawn_test");
+    char *debcommand[2]={"gdb_wrapper",NULL};
+    //believing the last of spawn-array is null
 
+    // for -termination analysys
+    //    char *debarg[6]={"-fjdbg-sig","all","-fjdbg-out-dir","log",exec_prog,neuron_argv};
+    // for deadlock
+    char *debarg[4]={"-fjdbg-dlock","-fjdbg-out-dir","log",exec_prog};
+    
+    printf("############ 01 variant for debug  ############\n\n");
+    MPI_Comm_spawn(debcommand[0], debarg, num_of_procs_nrn, spinfo, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
+#else
     /* make spawn of NEURON procs and make new intracommunicator 'nrn_comm'*/
     /* when it does not work, uncomment the below sentense*/
     /* for(i=0; i < 8; ++i){ */
@@ -200,6 +223,7 @@ int main(int argc, char **argv){
     printf("############ 01 ############\n\n");
     MPI_Comm_spawn(exec_prog, neuron_argv, num_of_procs_nrn, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
     // MPI_Comm_spawn(exec_prog, spawn_argvs, num_of_procs_nrn, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
+#endif
     printf("############ 02 ############\n\n");
     MPI_Intercomm_merge(intercomm, 0, &nrn_comm);
     printf("############ 03 ############\n\n");
