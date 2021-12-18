@@ -3,7 +3,9 @@ TARGET = estimate_main
 # CC = mpicc
 # CFLAGS = -O3 -Wall -g
 CC = mpifccpx
-CFLAGS = -Kfast -g
+
+CFLAGS = -Kfast -g -NRtrap
+
 LDFLAGS = -lm
 INCLUDES = -I.
 LIBS = -lm
