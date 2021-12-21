@@ -1,3 +1,3 @@
 make clean
 make
-mpifccpx -Kfast -o make_neuro_spawn make_neuro_spawn.c
+mpifccpx -Kfast -g -o make_neuro_spawn make_neuro_spawn.c
