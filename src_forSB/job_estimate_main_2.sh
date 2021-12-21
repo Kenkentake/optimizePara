@@ -17,12 +17,12 @@ MU=2
 NUM_OF_CHILD_PROCS=2
 # NUM_OF_CHILD_PROCS=1
 MAXEVAL=4
-# NUM_OF_GRANDCHILD_PROCS=16
-NUM_OF_GRANDCHILD_PROCS=2
+NUM_OF_GRANDCHILD_PROCS=6
+# NUM_OF_GRANDCHILD_PROCS=2
 EXEC_PROG="/home/hp200177/u00690/neuron_kplus/specials/sparc64/special"
 DIM_CON_MAT=6
 CON_MAT_NAME="../data/conMat_6.txt";
-PARAMETER_FILENAME="../data/params_6.txt";
+PARAMETER_FILENAME="../data/params_6_onlyWeight.txt";
 
 # MPIEXEC="mpiexec -mca mpi_print_stats 1"
 # NPROC="-n 1"
