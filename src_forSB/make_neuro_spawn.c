@@ -5,9 +5,12 @@
 
 /*definition of the wrapper of MPI_Bcast (function for communication with NEURON) */
 void MPI_Bcast_to_NEURON(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm comm){
+    printf("Entered MPI_Bcast_to_NEURON\n");
     /* datatype: now support MPI_DOUBLE only*/
     MPI_Bcast(&count, 1, MPI_INT, root, comm);
+    printf("MPI_Bcast &count \n");
     MPI_Bcast(buffer, count, datatype, root, comm);
+    printf("MPI_Bcast buffer \n");
     fflush(stdout);
 }/*MPI_Bcast_to_NEURON*/
 
@@ -44,12 +47,9 @@ int main(int argc, char **argv){
     int spawn_argv_size=4;
 
     char specials[] = "../hocfile_forSB/x86_64/special";
-    // char *neuron_argv[] = {"-mpi", "-nobanner", "../hocfile_forSB/networkSimulation.hoc", NULL};
-    char *neuron_argv[] = {"-mpi", "/home/hp200177/u00690/neuron_kplus/hoc/test_gather.hoc", NULL};
-
-    // 2021/11/30
-    // int neuron_mode = 0;
-    int neuron_mode = 1;
+    char *neuron_argv[] = {"-mpi", "-nobanner", "../hocfile_forSB/networkSimulation.hoc", NULL};
+    // char *neuron_argv[] = {"-mpi", "-nobanner", "/home/hp200177/u00690/neuron_kplus/hoc/test_gather.hoc", NULL};
+    int neuron_mode = 0;
 
     char connection_data[256] = "../data/conMat.txt";
     FILE *fp;
@@ -118,13 +118,13 @@ int main(int argc, char **argv){
     // num_of_procs_nrn = dim_conMat;
     if(argc > 6){
       sprintf(connection_data, "%s", argv[6]);
-      // printf("connection_data = %s\n", connection_data);
+      printf("connection_data = %s\n", connection_data);
     }
 
-    // printf("dimension = %d, num_of_cell_combination = %d\n", dimension, num_of_cell_combination);
+    printf("dimension = %d, num_of_cell_combination = %d\n", dimension, num_of_cell_combination);
 
-    printf("\ninfo@make_neuro_spawn:\n");
-    printf("num_of_my_pop=%d\n dimension=%d\n num_of_procs_nrn=%d\n exec_prog=%s\n dim_conMat=%d\n connection_data=%s\n\n", num_of_my_pop, dimension, num_of_procs_nrn, exec_prog, dim_conMat, connection_data);
+    printf("info@make_neuro_spawn:\n");
+    printf("num_of_my_pop=%d, dimension=%d, num_of_procs_nrn=%d, exec_prog=%s, dim_conMat=%d, connection_data=%s\n", num_of_my_pop, dimension, num_of_procs_nrn, exec_prog, dim_conMat, connection_data);
 
     /* set variables for communication */
     num_sendparams_from_parent = dimension * num_of_my_pop;/* separate weight and delay ver. (for non-separate, delete / 2*/
@@ -184,25 +184,23 @@ int main(int argc, char **argv){
       //printf("\n");
     }
 
-    printf("\n############### num of nrn procs ################################\n");
+    
+    printf("############### num of nrn procs ################################\n");
     printf("num_of_procs_nrn = %d\n", num_of_procs_nrn);
     printf("############### spawn_argvs (child -> grandchild) ###############\n");
     printf("spawn_argvs[0](num_of_my_pop) = %s\n", spawn_argvs[0]);
     printf("spawn_argvs[1](num_of_cell_combination) = %s\n", spawn_argvs[1]);
     printf("spawn_argvs[2](dimension) = %s\n", spawn_argvs[2]);
     printf("spawn_argvs[3] = %s\n", spawn_argvs[3]);
-    printf("#################################################################\n\n");
+    printf("#################################################################\n");
 
     /* make spawn of NEURON procs and make new intracommunicator 'nrn_comm'*/
     /* when it does not work, uncomment the below sentense*/
     /* for(i=0; i < 8; ++i){ */
     /* 	if(spawn_parent_rank%8 == i){ */
-    printf("############ 01 ############\n\n");
-    MPI_Comm_spawn(exec_prog, neuron_argv, num_of_procs_nrn, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
     // MPI_Comm_spawn(exec_prog, spawn_argvs, num_of_procs_nrn, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
-    printf("############ 02 ############\n\n");
+    MPI_Comm_spawn(exec_prog, neuron_argv, num_of_procs_nrn, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
     MPI_Intercomm_merge(intercomm, 0, &nrn_comm);
-    printf("############ 03 ############\n\n");
     MPI_Comm_size(nrn_comm, &spawn_size);
     MPI_Comm_rank(nrn_comm, &spawn_myid);
     /* 	} */
@@ -213,8 +211,12 @@ int main(int argc, char **argv){
     send_count = 1;
     double info[] = {1.0, 1.0, 1.0};
     info[0] = num_of_my_pop; 
+    neuron_mode = 1;
+
+    // add
+    fflush(stdout);
+
     if(neuron_mode){
-      printf("MPI_Bcast_info_to_NEURON");
       MPI_Bcast_to_NEURON(info, send_count, MPI_DOUBLE, 0, nrn_comm);
     }
 
@@ -228,9 +230,13 @@ int main(int argc, char **argv){
     /* printf("\n"); */
     /* infinite loop for estimation (receive information of genes and pass it to NEURON process*/
     while(1){
+    printf("############ 001 ############\n");
 	/* recieve the gene information from parent process*/
 	MPI_Scatter(pop_sendbuf_whole, num_sendparams_from_parent, MPI_DOUBLE, pop_rcvbuf_whole, num_sendparams_from_parent, MPI_DOUBLE, 0, spawn_parent_comm);
 	/* transfrom the data structure to suitable manner for communication */
+
+    printf("############ 002 ############\n");
+    fflush(stdout);
 
 	/* printf("\n\n"); */
 	/* printf("original gene:"); */
@@ -241,7 +247,6 @@ int main(int argc, char **argv){
 	/* } */
 	/* printf("\n\n"); */
 	
-
 	gene_id = 0;
 	for(k=0;k<num_of_my_pop;++k){
 	  for(i=0;i<dim_conMat;++i){
@@ -261,6 +266,8 @@ int main(int argc, char **argv){
 	/*   } */
 	/* } */
 	/* printf("\n\n"); */
+    printf("############ 003 ############\n");
+    fflush(stdout);
 
 	for(k=0;k<num_of_procs_nrn;k++){
 	  for(i=0;i<num_of_my_pop;i++){
@@ -301,31 +308,52 @@ int main(int argc, char **argv){
 	/*     printf("\n\n"); */
 	/* } */
 	
+    printf("############ 004 ############\n");
+    fflush(stdout);
 
 	MPI_Barrier(MPI_COMM_WORLD);
+
+    printf("############ 005 ############\n");
+	fflush(stdout);
 	
 	/*pass the gene information to NEURON process*/
 	MPI_Scatter(pop_sendbuf_nrn_weight, num_of_weights_per_one_nrnproc, MPI_DOUBLE, pop_rcvbuf_nrn_weight, num_of_weights_per_one_nrnproc, MPI_DOUBLE, 0, nrn_comm);
+
+    printf("############ 006 ############\n");
+	fflush(stdout);
 	
 	/* wait for finish calculation in NEURON*/
 	MPI_Gather(arFunvals_child_buf1, num_of_my_pop, MPI_DOUBLE, arFunvals_child_buf2, num_of_my_pop, MPI_DOUBLE, 0, nrn_comm);
+
+    printf("############ 007 ############\n");
+	fflush(stdout);
 
 	/* tally the score information of my process */
 	for(i=0; i<num_of_my_pop; ++i){
 	    arFunvals_whole_buf[i] = arFunvals_child_buf2[i + num_of_my_pop];
 	    //printf("arFunvals_whole_buf[%d] = %lf\n", i, arFunvals_whole_buf[i]);
 	}
-	fflush(stdout);
 	MPI_Barrier(MPI_COMM_WORLD);
+
+    printf("############ 008 ############\n");
+	fflush(stdout);
 
 	/* pass the score information to parent process*/
 	MPI_Gather(arFunvals_whole_buf, num_of_my_pop, MPI_DOUBLE, arFunvals_whole, num_of_my_pop, MPI_DOUBLE, 0, spawn_parent_comm);
+
+    printf("############ 009 ############\n");
+	fflush(stdout);
+
 	/* recieve and pass the information whether the loop is terminated or not */
 	MPI_Bcast(&flg_termination, 1, MPI_DOUBLE, 0, spawn_parent_comm);
 
+    printf("############ 010 ############\n");
+	fflush(stdout);
+
 	if(neuron_mode){
-      printf("MPI_Bcast_&flg_termination_to_NEURON");
 	  MPI_Bcast_to_NEURON(&flg_termination, 1, MPI_DOUBLE, 0, nrn_comm);
+      printf("############ 011 ############\n");
+	  fflush(stdout);
 	}else{
 	  MPI_Bcast(&flg_termination, 1, MPI_DOUBLE, 0, nrn_comm);
 	}
@@ -346,8 +374,8 @@ int main(int argc, char **argv){
     free(arFunvals_whole_buf);
     free(arFunvals_whole);
     // add free newly
-    // free(pop_rcvbuf_whole);
-    // free(pop_sendbuf_nrn_weight_adjust_dim);
+    free(pop_rcvbuf_whole);
+    free(pop_sendbuf_nrn_weight_adjust_dim);
 
    
     for(i=0;i<dim_conMat;++i){

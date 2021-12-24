@@ -163,11 +163,19 @@ int main(int argc, char **argv){
     t.c_s = c_s;
     t.target_f = 1e-5;
 
+
     printf("start LMCMA\n");
+
+    // add
+    fflush(stdout);
+
     LMCMA(&t);
     // LMCMA(t.N, t.lambda, t.mu, t.ccov, t.xmin, t.xmax, t.nvectors, t.maxsteps, t.cc, t.val_target, t.sigma, t.c_s, t.target_f, t.maxevals, t.inseed, output, t.printToFile, t.sample_symmetry, t.spawn_comm, t.spawn_numprocs, &t);
     // LMCMA(N, lambda, mu, ccov, xmin_vec, xmax_vec, nvectors, maxsteps, cc, val_target, sigma_vec, c_s, target_f, maxevals, inseed, output, printToFile, sample_symmetry, spawn_comm, spawn_numprocs);
     printf("end of LMCMA\n");
+
+    // add
+    fflush(stdout);
 
     MPI_Comm_free(&intercomm);
     MPI_Comm_free(&spawn_comm);
