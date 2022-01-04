@@ -30,6 +30,7 @@ allvm = new Vector()
 // make cells
 // (code is in ParaCellSwc.hoc)
 printf("######### 001 p_mkcells (pc.id = %d)\n", pc.id)
+// p_mkcells("../hocfile_forSB/list/neuronlist_86.txt", 0)
 p_mkcells("../hocfile_forSB/list/neuronlist_6.txt", 0)
 
 
@@ -131,6 +132,7 @@ if (debugon) {
 tstop = 500
 if(debugon) {tstop = 0.01}
 dt = 0.01          // number of calculation
+// dt =  0.5
 // changed 2021/10/04
 // dt = 0.001          // number of calculation
 nstep_steprun = 1   // number of steps
@@ -177,7 +179,7 @@ DIM_CMAES = NCELLS * NCELLS
 NUM_OF_POP_PER_PROCS = 1 //redefine by MPI_Bcast from parent C process
 
 recordBin = 62.5 //default 125 in single compartment implementation
-numFitLoop = tstop / recordBin
+numFitLoop = tstop / recordBin  // 8 = 500 / 62.5
 objref fittingVec
 fittingVec = new Vector(numFitLoop - 2)
 
@@ -221,13 +223,15 @@ func evalFitness(){ local sum, scaleFactor, n, i, tmpFreq localobj hoge
     scaleFactor = 0.3 //temporarily
     
     // calc the fitness here under construction
-    if(pc.gid_exists(0)){// temporary set 0
+    // changed 2022/1/2
+    // if(pc.gid_exists(0)){// temporary set 0
+    if(pc.gid_exists(5)){// temporary set 0
 	    for i = 0, fittingVec.size() - 1  {
 	        tmpFreq = getFreq(recordBin * i, recordBin * 2)//250ms bin overlapped each 125ms
-	        //printf("freq(%d ~ %d) is %d\t", recordBin * i, recordBin * (i+1), tmpFreq)
+	        printf("freq(%d ~ %d) is %d\t", recordBin * i, recordBin * (i+1), tmpFreq)
 	        sum += (tmpFreq - fittingVec.x(i)) * (tmpFreq - fittingVec.x(i))
 	    }
-	//printf("\n")
+	printf("\n")
     }
     return sum * scaleFactor
 }
@@ -323,7 +327,8 @@ proc update_weight(){local i, j, syn_count, cell_count, start_idx localobj updat
     for i=0, NCELLS - 1{
         printf("pc.gid_exists(%d) is %d\n", i, pc.gid_exists(i))
         if(pc.gid_exists(i)){
-            printf("pc.gid_exists(%d) is True\n", pc.gid_exists(i))
+            // printf("pc.gid_exists(%d) is True\n", pc.gid_exists(i))
+            printf("pc.gid_exists(%d) is True\n", i)
         }
     }
     printf("update_vec.size is %d\n", update_vec.size())
@@ -390,7 +395,8 @@ proc execSimulation(){ local i, root, fitness, tempfit, flg_cmaes_terminate, num
     //TODO: reset arg[3]
     printf("pc.nhost is %d\n", pc.nhost)
     output_id = detectOutputProc(NCELLS, pc.nhost, 5)
-    output_id2 = detectOutputProc(NCELLS, pc.nhost, 1)
+    output_id2 = detectOutputProc(NCELLS, pc.nhost, 5)
+    // output_id2 = detectOutputProc(NCELLS, pc.nhost, 1)
     printf("output_id = %d, output_id2 = %d\n", output_id, output_id2)
 
     {pc.set_maxstep(10)}
@@ -417,10 +423,8 @@ proc execSimulation(){ local i, root, fitness, tempfit, flg_cmaes_terminate, num
 	    send_fit_vec2 = new Vector(num_of_pop_per_procs)
 	    
 	    //printf("num_of_pop_per_procs in execSimulation (in hocfile) is %d\n", num_of_pop_per_procs)
+	    // printf("num_of_pop_per_procs = %d\n", num_of_pop_per_procs)
 	    //recieve weight data
-	    // printf("rcv_pop_vec_weight.size = %d\n", rcv_pop_vec_weight.size())
-	    // printf("dim_cmaes = %d\n", dim_cmaes)
-	    printf("num_of_pop_per_procs = %d\n", num_of_pop_per_procs)
 	    pc.scatter_d(nullvec, rcv_pop_vec_weight, dim_cmaes * num_of_pop_per_procs, root)
 	    printf("rcv_pop_vec_weight.size = %d\n", rcv_pop_vec_weight.size())
 	    //recieve delay data
@@ -462,7 +466,8 @@ proc execSimulation(){ local i, root, fitness, tempfit, flg_cmaes_terminate, num
             printf("######### 010 Finished prun (pc.id = %d)\n", pc.id)
 
 	        tempfit = evalFitness()
-	        tempfit += evalFitness2()
+            printf("@@@@@@ tempfit = %f @@@@@ (pc.id = %d)\n", tempfit, pc.id)
+	        // tempfit += evalFitness2()
 	        //if fitness converted to log_fitness, write here like below
 	        if(log_fitness == 1){
 	    	    if(tempfit == 0){
@@ -478,8 +483,10 @@ proc execSimulation(){ local i, root, fitness, tempfit, flg_cmaes_terminate, num
 	    }
         printf("output_id = %d, output_id2 = %d\n", output_id, output_id2)
         printf("######### 011 broadcast send_fit_vec (pc.id = %d)\n", pc.id)
+        // printf("@@@@ before broadcast (pc.id = %d)\n@@@@ send_fit_vec.(0) = %f\n@@@@ send_fit_vec.(1) = %f\n", pc.id, send_fit_vec.x(0), send_fit_vec.x(1))
 	    pc.broadcast(send_fit_vec, output_id)
 	    pc.broadcast(send_fit_vec2, output_id2)
+        // printf("@@@@ after broadcast (pc.id = %d)\n@@@@ send_fit_vec.(0) = %f\n@@@@ send_fit_vec.(1) = %f\n", pc.id, send_fit_vec.x(0), send_fit_vec.x(1))
 	    
 	    if(output_id!=output_id2){
 	        for(i=0; i<num_of_pop_per_procs; i+=1){
@@ -532,8 +539,8 @@ proc pcontinue() {local time, timestep, i strdef recfilename
     // while(t < tstop){
     // 	pstep()
     // }
-    // timestep = dt * 40
-    timestep = dt * 1000
+    timestep = dt * 40
+    // timestep = dt * 1000
     // printf("tstop is %d\n", tstop)
     // tstop is 500
     // timestep is 0.0125
