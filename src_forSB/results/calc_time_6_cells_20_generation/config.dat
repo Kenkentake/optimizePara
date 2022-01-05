@@ -1,0 +1,2 @@
+# Num_of_pop, Mu, Max_Eval(= generatoion * num_of_pop), Num_of_child_procs, Num_of_grandchild_procs, Dim_con_mat, Con_mat_file_name, Parameter_file
+16 8 320 8 6 6 ../data/conMat_6.txt ../data/params_6_onlyWeight.txt

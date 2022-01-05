@@ -74,6 +74,7 @@ typedef struct
   double flg_termination;
   int num_of_pop_per_child;
   int spawn_numprocs;
+  char *output_dir_path;
 
   /*lmcma arrays*/
   double *arx;
@@ -152,9 +153,9 @@ void invAz(int N, double* Av, int iterator_sz, int* iterator, double* v_arr, dou
 int printGene(FILE *fp, const double *x, int dimension);
 int printGene2(FILE *fp, const double *x, int dimension);
 
-/* void LMCMA(int N, int lambda, int mu, double ccov, double *xmin, double *xmax, int nvectors, */
-/* 	   int maxsteps, double cc, double val_target, double *sigma, double c_s, double target_f,  */
-/* 	   int maxevals, int inseed, double* output, int printToFile, int sample_symmetry, MPI_Comm spawn_comm, int num_of_spawn_comm); */
+// void LMCMA(int N, int lambda, int mu, double ccov, double *xmin, double *xmax, int nvectors,
+// 	   int maxsteps, double cc, double val_target, double *sigma, double c_s, double target_f,
+// 	   int maxevals, int inseed, double* output, int printToFile, int sample_symmetry, MPI_Comm spawn_comm, int num_of_spawn_comm);
 
 int loadRangeFile(char *filename, double *xmin_vec, double *xmax_vec, int *N);
 

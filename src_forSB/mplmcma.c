@@ -1,15 +1,13 @@
 #include "mplmcma.h"
 
-void init_gt(global_t* gt)
-{
-	gt->func_tempdata = NULL;
+void init_gt(global_t* gt) {
+    gt->func_tempdata = NULL;
 	gt->x_tempdata = NULL;
 	gt->rotmatrix = NULL;
 	gt->func_shiftxi = NULL;
 }
 
-void free_gt(global_t* gt)
-{
+void free_gt(global_t* gt) {
     if (gt->func_tempdata)	{	free( gt->func_tempdata);	}
     if (gt->x_tempdata)		{	free( gt->x_tempdata );  	}
     if (gt->rotmatrix)		{	 free( gt->rotmatrix);          }
@@ -20,37 +18,36 @@ void free_gt(global_t* gt)
    from Nikolaus Hansen's source code for CMA-ES
 */
 
-void random_exit(random_t *t)
-{
+void random_exit(random_t *t) {
 	free( t->rgrand);
 }
 
-long random_Start( random_t *t, long unsigned inseed)
-{
+long random_Start( random_t *t, long unsigned inseed) {
 	long tmp;
 	int i;
 
 	t->flgstored = 0;
 	t->startseed = inseed;
-	if (inseed < 1)
-		inseed = 1; 
+	if (inseed < 1) {
+        inseed = 1; 
+    }
 	t->aktseed = inseed;
 #pragma omp parallel for
-	for (i = 39; i >= 0; --i)
-	{
+	for (i = 39; i >= 0; --i){
 		tmp = t->aktseed/127773;
-		t->aktseed = 16807 * (t->aktseed - tmp * 127773)
-			- 2836 * tmp;
-		if (t->aktseed < 0) t->aktseed += 2147483647;
-		if (i < 32)
+		t->aktseed = 16807 * (t->aktseed - tmp * 127773) - 2836 * tmp;
+		if (t->aktseed < 0) {
+            t->aktseed += 2147483647;
+        }
+		if (i < 32) {
 			t->rgrand[i] = t->aktseed;
+        }
 	}
 	t->aktrand = t->rgrand[0];
 	return inseed;
 }
 
-long random_init( random_t *t, long unsigned inseed)
-{
+long random_init( random_t *t, long unsigned inseed) {
 	clock_t cloc = clock();
 
 	t->flgstored = 0;
@@ -63,29 +60,27 @@ long random_init( random_t *t, long unsigned inseed)
 	return random_Start(t, inseed);
 }
 
-double random_Uniform( random_t *t)
-{
+double random_Uniform( random_t *t) {
 	long tmp;
 
 	tmp = t->aktseed/127773;
-	t->aktseed = 16807 * (t->aktseed - tmp * 127773)
-		- 2836 * tmp;
-	if (t->aktseed < 0) 
+	t->aktseed = 16807 * (t->aktseed - tmp * 127773) - 2836 * tmp;
+	if (t->aktseed < 0) {
 		t->aktseed += 2147483647;
+    }
 	tmp = t->aktrand / 67108865;
 	t->aktrand = t->rgrand[tmp];
 	t->rgrand[tmp] = t->aktseed;
 	return (double)(t->aktrand)/(2.147483647e9);
 }
 
-double random_Gauss(random_t *t)
-{
-	if (USE_ZIGGURAT)
+double random_Gauss(random_t *t) {
+	if (USE_ZIGGURAT) {
 	  return 0;//gsl_ran_gaussian_ziggurat (t);
+    }
 	double x1, x2, rquad, fac;
 
-	if (t->flgstored)
-	{    
+	if (t->flgstored) {    
 		t->flgstored = 0;
 		return t->hold;
 	}
@@ -101,29 +96,25 @@ double random_Gauss(random_t *t)
 	return fac * x2;
 }
 
-void	time_tic(global_t* t)
-{
+void time_tic(global_t* t) {
 	t->time_tic_t = time(NULL);	// measure time in seconds
 	t->time_tic_c = clock();	// measure time in microseconds up to ~2k seconds
 }
 
-double	time_tictoc(global_t* t)
-{
+double time_tictoc(global_t* t) {
 	double dt = difftime(t->time_toc_t,t->time_tic_t);
 	if (dt < 1000)
 		dt = (double)(t->time_toc_c - t->time_tic_c) / CLOCKS_PER_SEC;
 	return dt;
 }
 
-double	time_toc(global_t* t)
-{
+double	time_toc(global_t* t) {
 	t->time_toc_t = time(NULL);
 	t->time_toc_c = clock();
 	return time_tictoc(t);
 }
 
-void matrix_eye(double* M, int m)
-{
+void matrix_eye(double* M, int m) {
     int i, j;
     //if add openmp, slowen the program...
     //#pragma omp parallel for private(j)
@@ -135,13 +126,11 @@ void matrix_eye(double* M, int m)
 
 
 // vector res = matrix a X vector b
-void matrix_mult_vector(double* res, double* a, double* b,int m)
-{
+void matrix_mult_vector(double* res, double* a, double* b,int m) {
     int i, j;
 	double val = 0.0;
 //#pragma omp parallel for private(j)
-	for (i=0; i<m; i++)
-	{
+	for (i=0; i<m; i++) {
 		val = 0.0;
 		for (j=0; j<m; j++)
 			val += a[i*m + j] * b[j];
@@ -151,14 +140,12 @@ void matrix_mult_vector(double* res, double* a, double* b,int m)
 
 
 // maxtrix res = matrix a X matrix b
-void matrix_mult_matrix(double* res, double* a, double* b,int m)
-{
+void matrix_mult_matrix(double* res, double* a, double* b,int m) {
     int i, j, k;
 	double val;
 #pragma omp parallel for private(j), private(k), reduction(+:val)
 	for (i=0; i<m; i++)
-	    for(j=0; j<m; j++)
-		{
+	    for(j=0; j<m; j++) {
 			val = 0;
 			for (k=0; k<m; k++)
 				val += a[i*m + k] * b[k*m + j];
@@ -168,8 +155,7 @@ void matrix_mult_matrix(double* res, double* a, double* b,int m)
 
 
 // matrix res = vector a X vector b
-void vector_mult_vector(double* res, double* a, double* b,int m)
-{
+void vector_mult_vector(double* res, double* a, double* b,int m) {
     int i,j;
 //#pragma omp parallel for private(j)
 	for (i=0; i<m; i++)
@@ -184,8 +170,7 @@ void vector_mult_matrix(double* res, double* a, double* b,int m)
     int i, j;
 	double val;
 #pragma omp parallel for private(j), reduction(+:val)
-	for (i=0; i<m; i++)
-	{
+	for (i=0; i<m; i++) {
 		val = 0;
 		for (j=0; j<m; j++)
 			val += a[j] * b[j*m + i];
@@ -193,8 +178,7 @@ void vector_mult_matrix(double* res, double* a, double* b,int m)
 	}
 }
 
-double vector_prod(double* a, double* b,int m)
-{
+double vector_prod(double* a, double* b,int m) {
     int i;
 	double res = 0.0;
 //#pragma omp parallel for
@@ -315,8 +299,7 @@ void getRotatedX(double* x, int N, global_t* t)
 {
 	if (t->x_tempdata == NULL)
 	    t->x_tempdata = (double *)malloc(sizeof(double) * N);
-	if (t->rotmatrix == NULL)
-	{
+	if (t->rotmatrix == NULL) {
 	    t->rotmatrix = (double *)malloc(sizeof(double) * N*N);
 		/*
 		FILE* pFile;
@@ -564,14 +547,13 @@ void free_lmcma_arrays(mplmcma_t *t){
 //void LMCMA(int N, int lambda, int mu, double ccov, double *xmin, double *xmax, int nvectors,
 //	   int maxsteps, double cc, double val_target, double *sigma, double c_s, double target_f, 
 //	   int maxevals, int inseed, double* output, int printToFile, int sample_symmetry, MPI_Comm spawn_comm, int num_of_spawn_comm,// mplmcma_t *mplmcma)
-void LMCMA(mplmcma_t *t)
-{
-  // memory allocation
-  int res;
-  res = init_lmcma_arrays(t);
-  if(!res){
-    return ;
-  }
+void LMCMA(mplmcma_t *t) {
+    // memory allocation
+    int res;
+    res = init_lmcma_arrays(t);
+    if(!res) {
+      return ;
+    }
     my_boundary_transformation_t my_boundaries;
     my_boundary_transformation_init(&my_boundaries, t->xmin, t->xmax, t->flg_log, t->N);
     
@@ -579,34 +561,32 @@ void LMCMA(mplmcma_t *t)
     int p;
     global_t gt;
     init_gt(&gt);
-	
+
     // memory initialization
     random_init(&gt.ttime , t->inseed);
 
     double sum_weights = 0;
-#pragma omp parallel for reduction(+:sum_weights)
-    for(i=0; i<t->mu; i++)
-    {
-	t->weights[i] = log((double)(t->mu+0.5)) - log((double)(1+i));
-	sum_weights = sum_weights + t->weights[i];
+    #pragma omp parallel for reduction(+:sum_weights)
+    for(i=0; i<t->mu; i++) {
+	    t->weights[i] = log((double)(t->mu+0.5)) - log((double)(1+i));
+	    sum_weights = sum_weights + t->weights[i];
     }
     double mueff = 0;
-#pragma omp parallel for reduction(+:mueff)
-    for(i=0; i<t->mu; i++)
-    {
-	t->weights[i] = t->weights[i] / sum_weights;
-	mueff = mueff + t->weights[i]*t->weights[i];
+    #pragma omp parallel for reduction(+:mueff)
+    for(i=0; i<t->mu; i++) {
+	    t->weights[i] = t->weights[i] / sum_weights;
+	    mueff = mueff + t->weights[i]*t->weights[i];
     }
     mueff = 1 / mueff;
 
     for(i=0; i<t->N; i++)
-	t->pc[i] = 0;
+	    t->pc[i] = 0;
 
     double K = 1/sqrt(1 - t->ccov);
     double M = sqrt(1 - t->ccov);
 	
     for( i=0; i<t->N; i++)
-	t->xmean[i] = t->xmin[i] + (t->xmax[i] - t->xmin[i])*random_Uniform(&gt.ttime);
+	    t->xmean[i] = t->xmin[i] + (t->xmax[i] - t->xmin[i])*random_Uniform(&gt.ttime);
 
     int counteval = 0;
     int iterator_sz = 0;
@@ -616,281 +596,282 @@ void LMCMA(mplmcma_t *t)
     int indx = 0;
 	
     double BestF=100000;
+    double BestF_past=100000;
 
     FILE* pFile;
-    if (t->printToFile == 1)
-    {	
-	char filename[250];
-	sprintf(filename,"LMCMA%d.txt",t->N);
-	pFile = fopen(filename,"w");
+    if (t->printToFile == 1) {	
+	    char filename[250];
+	    sprintf(filename,"LMCMA%d.txt",t->N);
+	    pFile = fopen(filename,"w");
     }
-	
-      //for test (delete)
-    for(i=0;i<((t->N/2) * (t->lambda + t->num_of_pop_per_spawn));++i){
-	t->scatter_sendvec_d[i] = -1;
+
+    FILE *fp_output;
+    char output_cmaes_file_path[256];
+    sprintf(output_cmaes_file_path, "%s/output_cmaes.dat", t->output_dir_path);
+    fp_output = fopen(output_cmaes_file_path, "w");
+
+    //for test (delete)
+    for(i=0;i<((t->N/2) * (t->lambda + t->num_of_pop_per_spawn));++i) {
+	    t->scatter_sendvec_d[i] = -1;
     }
 
     int loop_count = 0;
-    while(stop == 0)
-    {
-	int sign = 1; 
-	//this loop is not necessary for the current implementation
+    while(stop == 0) {
+	    int sign = 1; 
+	    //this loop is not necessary for the current implementation
 
-	//in main
-    printf("################# MAIN OF MPLMCMA ################ \n");
-	for(i=0; i<t->lambda; ++i){
-	    if (sign == 1)
-	    { 
-		for( k=0; k<t->N; k++)	// O(n)
-		{
-		    t->z[k] = random_Gauss(&gt.ttime);
-		    t->Az[k] = t->z[k];
-		}
-			
-		for(k=0; k<iterator_sz; k++)	// O(m*n)
-		{
-		    int jcur = t->iterator[k];				
-		    double* pc_j = &t->pc_arr[jcur*t->N];
-		    double* v_j = &t->v_arr[jcur*t->N];
-		    double v_j_mult_z = 0;
-		    for(p=0; p<t->N; p++){
-			v_j_mult_z = v_j_mult_z + v_j[p] * t->z[p];
-		    }
-		    v_j_mult_z = t->Nj_arr[jcur] * v_j_mult_z;
-		    //printf("\n\n\nt->Nj_arr[%d] = %lf\n\n\n\n", jcur, t->Nj_arr[jcur]);
-		    for(p=0; p<t->N; p++)
-			t->Az[p] = M * t->Az[p] + v_j_mult_z * pc_j[p];
-		}
+	    //in main
+	    for(i=0; i<t->lambda; ++i) {
+	        if (sign == 1){ 
+	    	    for( k=0; k<t->N; k++) {  	// O(n)
+	    	        t->z[k] = random_Gauss(&gt.ttime);
+	    	        t->Az[k] = t->z[k];
+	    	    }
+	    	    for(k=0; k<iterator_sz; k++) {	// O(m*n)
+	    	        int jcur = t->iterator[k];				
+	    	        double* pc_j = &t->pc_arr[jcur*t->N];
+	    	        double* v_j = &t->v_arr[jcur*t->N];
+	    	        double v_j_mult_z = 0;
+	    	        for(p=0; p<t->N; p++) {
+	    	    	    v_j_mult_z = v_j_mult_z + v_j[p] * t->z[p];
+	    	        }
+                    // this is the difference
+	    	        v_j_mult_z = t->Nj_arr[jcur] * v_j_mult_z;
+	    	        //printf("\n\n\nt->Nj_arr[%d] = %lf\n\n\n\n", jcur, t->Nj_arr[jcur]);
+	    	        for(p=0; p<t->N; p++)
+	    	    	    t->Az[p] = M * t->Az[p] + v_j_mult_z * pc_j[p];
+	    	    }
+	        }
+	        
+	        //generate the gene information (main)
+	        //this section was not different from the current implementation largely
+	        for(k=0; k<t->N; k++) {	// O(n)
+	    	    t->arx[i*t->N + k] = t->xmean[k] + sign*t->sigma[k]*t->Az[k];
+	    	//		printf("t->arx[%d] = %lf\n", i*t->N+k, t->arx[i*t->N+k]);
+	        }
+	        my_boundary_transformation(&my_boundaries, &t->arx[i*t->N], t->x_temp, 0);
+	        /* for(k=0; k<(int)(t->N/2); ++k){ */
+	        /* 	t->scatter_sendvec_w[i*(t->N/2)+k+(t->num_of_pop_per_spawn*(int)(t->N/2))] = t->x_temp[k]; */
+	        /* 	t->scatter_sendvec_d[i*(t->N/2)+k+(t->num_of_pop_per_spawn*(int)(t->N/2))] = t->x_temp[k+t->N/2]; */
+	        /* } */
+	        for(k=0; k<t->N; ++k) {
+	    	    t->scatter_sendvec[i*t->N+k+(t->num_of_pop_per_spawn * t->N)] = t->x_temp[k];
+	        }
+	    	    
+	        if (t->sample_symmetry)
+	    	    sign = -sign;
+	    }//end of generate gene information
+	    
+	    //printf("t->scatter information: sendnum = %d\n", t->num_of_pop_per_spawn * t->N / 2); 
+
+	    //scatter gene information from parent to child, and from child to grandchild	    
+//	    MPI_Scatter(t->scatter_sendvec_w, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, t->scatter_rcvvec_w, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, 0, t->spawn_comm); // in main and make_neuro_spawn
+//	    MPI_Scatter(t->scatter_sendvec_d, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, t->scatter_rcvvec_d, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, 0, t->spawn_comm); // in main and make_neuro_spawn
+        printf("#############\nt->num_of_pop_per_spawn = %d\nt->N = %d\n#############\n",
+                t->num_of_pop_per_spawn, t->N);
+        fflush(stdout);
+	    MPI_Scatter(t->scatter_sendvec, t->num_of_pop_per_spawn * t->N, MPI_DOUBLE, t->scatter_rcvvec, t->num_of_pop_per_spawn * t->N, MPI_DOUBLE, 0, t->spawn_comm);
+	    //MPI_Scatter(,,,nrn_comm); //in make_neuro_spawn and NEURON
+	    
+	    //calculation in NEURON process
+	    
+	    //gather fitness information from grandchild to child and from child to parent
+	    //MPI_Gather(,,,nrn_comm);//in make neuro_spawn and NEURON
+	    MPI_Gather(t->arFunvals_send, t->num_of_pop_per_spawn, MPI_DOUBLE, t->arFunvals_rcv, t->num_of_pop_per_spawn, MPI_DOUBLE, 0, t->spawn_comm);//in main and make_neuro_spawn
+
+        double generation_total_fitness;
+        double generation_mean_fitness;
+        double generation_best_fitness;
+	    	
+        BestF_past = BestF;
+	    for(i=0; i<t->lambda; ++i) {
+	        t->arfitness[i] = t->arFunvals_rcv[i+t->num_of_pop_per_spawn];
+            printf("######################\narfitness[%d] = %f\n######################\n",
+                    i, t->arfitness[i]);
+	        counteval = counteval + 1;
+	        if(counteval == 1){
+	    	    BestF = t->arfitness[i];
+	    	    for(j=0;j<t->N;++j){
+	    	        t->xbestever[j] = t->arx[i*t->N+j];
+	    	    }
+	        }
+	        if(BestF > t->arfitness[i]) {
+	    	    BestF = t->arfitness[i];
+	    	    for(j=0;j<t->N;++j) {
+	    	        t->xbestever[j] = t->arx[i*t->N+j];
+	    	    }
+            }
+            if(i==0) {
+                generation_best_fitness = t->arfitness[i];
+            }else{
+                if(t->arfitness[i]<generation_best_fitness)
+                    generation_best_fitness = t->arfitness[i];
+            }
+            generation_total_fitness += t->arfitness[i];
+	    }
+        
+        generation_mean_fitness = generation_total_fitness / t->lambda;
+        fprintf(fp_output, "%d %d %f %f %f\n",
+                loop_count+1, counteval, BestF, generation_best_fitness, generation_mean_fitness);
+        generation_total_fitness = 0.0;
+        generation_mean_fitness = 0.0;
+        generation_best_fitness = 0.0 ;
+	    
+	    myqsort(t->lambda, t->arfitness, t->arindex, t->arr_tmp);
+
+	    //save the previous information and reinitialize 'xmean'
+	    for(i=0; i<t->N; i++) {			
+	        t->xold[i] = t->xmean[i];
+	        t->xmean[i] = 0;
+	    }
+	    //make x_mean
+	    for(i=0; i<t->mu; i++) {
+	        double* cur_x = &t->arx[t->arindex[i] * t->N];
+	        for(j=0; j<t->N; j++)
+	    	    t->xmean[j] += t->weights[i] * cur_x[j];
+	    }
+
+	    //update pc and Av
+	    for(i=0; i<t->N; i++) {
+	        t->pc[i] = (1 - t->cc)*t->pc[i] + sqrt(t->cc*(2-t->cc)*mueff)*(t->xmean[i] - t->xold[i])/t->sigma[i];
+	        t->Av[i] = t->pc[i];
+	    }
+	    //calculate inverse of Av
+	    invAz(t->N, t->Av,iterator_sz, t->iterator, t->v_arr, t->Lj_arr, K);
+	    
+	    //printf("itr = %d, t->nvectors = %d\n", itr, t->nvectors);
+	    //??? refer to the original paper
+	    if (itr < t->nvectors) {
+	        t->ti[itr] = itr;	
+	    }else{
+	        int dmin = t->vec[t->ti[1]] - t->vec[t->ti[0]];
+	        int imin = 1;
+	        for(j=1; j<(t->nvectors-1); j++) {
+	    	    int dcur = t->vec[t->ti[j+1]] - t->vec[t->ti[j]];
+	    	    if (dcur < dmin) {
+	    	        dmin = dcur;
+	    	        imin = j + 1;
+	    	    }
+	        }
+	        if (dmin >= t->maxsteps)
+	    	    imin = 0;
+	        if (imin != (t->nvectors-1)) {
+	    	    int sav = t->ti[imin];
+	    	    for(j=imin; j<(t->nvectors-1); j++)
+	    	        t->ti[j] = t->ti[j+1];
+	    	    t->ti[t->nvectors-1] = sav;
+	        }
 	    }
 	    
-	    //generate the gene information (main)
-	    //this section was not different from the current implementation largely
-	    for(k=0; k<t->N; k++){	// O(n)
-		t->arx[i*t->N + k] = t->xmean[k] + sign*t->sigma[k]*t->Az[k];
-		//		printf("t->arx[%d] = %lf\n", i*t->N+k, t->arx[i*t->N+k]);
+	    
+	    iterator_sz = itr+1;
+	    if (iterator_sz > t->nvectors)	iterator_sz = t->nvectors;
+	    for(i=0; i<iterator_sz; i++)
+	        t->iterator[i] = t->ti[i];
+	    int newidx = t->ti[iterator_sz-1];
+	    t->vec[newidx] = itr;
+	    		
+	    for(i=0; i<t->N; i++) {
+	        t->pc_arr[newidx*t->N + i] = t->pc[i];
+	        t->v_arr[newidx*t->N + i] = t->Av[i];
 	    }
-	    my_boundary_transformation(&my_boundaries, &t->arx[i*t->N], t->x_temp, 0);
-	    /* for(k=0; k<(int)(t->N/2); ++k){ */
-	    /* 	t->scatter_sendvec_w[i*(t->N/2)+k+(t->num_of_pop_per_spawn*(int)(t->N/2))] = t->x_temp[k]; */
-	    /* 	t->scatter_sendvec_d[i*(t->N/2)+k+(t->num_of_pop_per_spawn*(int)(t->N/2))] = t->x_temp[k+t->N/2]; */
-	    /* } */
-	    for(k=0; k<t->N; ++k){
-            // t->scatter_sendvec[i*t->N+k+(t->num_of_pop_per_spawn * t->N)] = t->x_temp[k];
-            t->scatter_sendvec[i*t->N+k+(t->num_of_pop_per_spawn * t->N)] = 777;
+	    			
+	    double nv = 0;
+	    for(i=0; i<t->N; i++)
+	        nv += t->Av[i]*t->Av[i];
+	    //printf("1-t->ccov = %lf, nv = %lf, 1+(t->ccov/(1-t->ccov))*nv = %lf\n", 1-t->ccov, nv, 1+(t->ccov/(1-t->ccov))*nv); 
+	    t->Nj_arr[newidx] = (sqrt(1-t->ccov)/nv)*(sqrt(1+(t->ccov/(1-t->ccov))*nv)-1);
+	    t->Lj_arr[newidx] = (1/(sqrt(1-t->ccov)*nv))*(1-(1/sqrt(1+((t->ccov)/(1-t->ccov))*nv)));
+
+	    if (itr > 0) {
+	        for(i=0; i<t->lambda; i++) {
+	    	    t->mixed[i] = t->arfitness[i];
+	    	    t->mixed[t->lambda+i] = t->prev_arfitness[i];
+	        }
+	        myqsort(2*t->lambda, t->mixed, t->ranks, t->arr_tmp);
+	        double meanprev = 0;
+	        double meancur = 0;
+	        for(i=0; i<2*t->lambda; i++)
+	    	    t->ranks_tmp[i] = t->ranks[i];
+	        for(i=0; i<2*t->lambda; i++)
+	    	    t->ranks[t->ranks_tmp[i]] = i;
+	        for(i=0; i<t->lambda; i++) {
+	    	    meanprev = meanprev + t->ranks[i];
+	    	    meancur = meancur + t->ranks[t->lambda + i];
+	        }
+	        meanprev = meanprev / t->lambda;
+	        meancur = meancur / t->lambda;
+	        double diffv = (meancur - meanprev)/t->lambda;
+	        double z1 = diffv - t->val_target;
+	        s = (1-t->c_s)*s + t->c_s*z1;
+	        double d_s = 1;//2.0*(t->N-1.0)/t->N;
+	        for(i=0;i<t->N;++i)
+	    	    t->sigma[i] = t->sigma[i] * exp(s/d_s);
 	    }
-		    
-	    if (t->sample_symmetry)
-		sign = -sign;
-	}//end of generate gene information
 
-    // printf("################# END MAIN OF MPLMCMA ################ \n");
-    printf("t->scatter_sendvec_d[0] = %d\n", (*t).scatter_sendvec[0]);
-    // printf("t->scatter_rcvvec_d[0] = %d\n", t->scatter_rcvvec[0]);
-	// printf("t->scatter information: sendnum = %d\n", t->num_of_pop_per_spawn * t->N); 
-    // printf("t->scatter_rcvvec = %d\n", t->scatter_rcvvec);
-    // printf("t->spawn_comm = %d\n", t->spawn_comm);
-    // for(i=0; i<t->N; ++i){
-    for(i=0; i<200; ++i){
-        // printf("t->scatter_sendvec_d[%d] = %d\n", i, t->scatter_sendvec[i]);
-    }
-    printf("len of scatter_sendvec = %zu\n", sizeof((*t).scatter_sendvec) / sizeof(((*t).scatter_sendvec)[0]));
-    // printf("len of scatter_rcvvec = %zu\n", sizeof(t->scatter_rcvvec) / sizeof(int));
-    printf("t->N = %d\n", t->N);
-    // printf("t->num_of_pop_per_spawn = %d\n", t->num_of_pop_per_spawn);
-    // for (i=0; )
-
-	
-	//printf("t->scatter information: sendnum = %d\n", t->num_of_pop_per_spawn * t->N / 2); 
-
-	//scatter gene information from parent to child, and from child to grandchild
-    //MPI_Scatter(t->scatter_sendvec_w, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, t->scatter_rcvvec_w, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, 0, t->spawn_comm); // in main and make_neuro_spawn
-
-    // printf("################# END MAIN OF MPLMCMA ################ \n");
-    // MPI_Scatter(t->scatter_sendvec_d, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, t->scatter_rcvvec_d, t->num_of_pop_per_spawn * t->N / 2, MPI_DOUBLE, 0, t->spawn_comm); // in main and make_neuro_spawn
-	MPI_Scatter(t->scatter_sendvec, t->num_of_pop_per_spawn * t->N, MPI_DOUBLE, t->scatter_rcvvec, t->num_of_pop_per_spawn * t->N, MPI_DOUBLE, 0, t->spawn_comm);
-    // printf("############## RUN HERE ################ \n");
-	//MPI_Scatter(,,,nrn_comm); //in make_neuro_spawn and NEURON
-	
-	//calculation in NEURON process
-	
-	//gather fitness information from grandchild to child and from child to parent
-	//MPI_Gather(,,,nrn_comm);//in make neuro_spawn and NEURON
-	MPI_Gather(t->arFunvals_send, t->num_of_pop_per_spawn, MPI_DOUBLE, t->arFunvals_rcv, t->num_of_pop_per_spawn, MPI_DOUBLE, 0, t->spawn_comm);//in main and make_neuro_spawn
-		
-	for(i=0; i<t->lambda; ++i){
-	    t->arfitness[i] = t->arFunvals_rcv[i+t->num_of_pop_per_spawn];
-	    counteval = counteval + 1;
-	    if(counteval == 1){
-		BestF = t->arfitness[i];
-		for(j=0;j<t->N;++j){
-		    t->xbestever[j] = t->arx[i*t->N+j];
-		}
-	    }
-	    if(BestF > t->arfitness[i]){
-		BestF = t->arfitness[i];
-		for(j=0;j<t->N;++j){
-		    t->xbestever[j] = t->arx[i*t->N+j];
-		}
-	    }
-	}
-	
-	myqsort(t->lambda, t->arfitness, t->arindex, t->arr_tmp);
-
-	//save the previous information and reinitialize 'xmean'
-	for(i=0; i<t->N; i++)
-	{			
-	    t->xold[i] = t->xmean[i];
-	    t->xmean[i] = 0;
-	}
-	//make x_mean
-	for(i=0; i<t->mu; i++)
-	{
-	    double* cur_x = &t->arx[t->arindex[i] * t->N];
-	    for(j=0; j<t->N; j++)
-		t->xmean[j] += t->weights[i] * cur_x[j];
-	}
-
-	//update pc and Av
-	for(i=0; i<t->N; i++)
-	{
-	    t->pc[i] = (1 - t->cc)*t->pc[i] + sqrt(t->cc*(2-t->cc)*mueff)*(t->xmean[i] - t->xold[i])/t->sigma[i];
-	    t->Av[i] = t->pc[i];
-	}
-	//calculate inverse of Av
-	invAz(t->N, t->Av,iterator_sz, t->iterator, t->v_arr, t->Lj_arr, K);
-	
-	//printf("itr = %d, t->nvectors = %d\n", itr, t->nvectors);
-	//??? refer to the original paper
-	if (itr < t->nvectors)
-	{
-	    t->ti[itr] = itr;	
-	}else{
-	    int dmin = t->vec[t->ti[1]] - t->vec[t->ti[0]];
-	    int imin = 1;
-	    for(j=1; j<(t->nvectors-1); j++)
-	    {
-		int dcur = t->vec[t->ti[j+1]] - t->vec[t->ti[j]];
-		if (dcur < dmin)
-		{
-		    dmin = dcur;
-		    imin = j + 1;
-		}
-	    }
-	    if (dmin >= t->maxsteps)
-		imin = 0;
-	    if (imin != (t->nvectors-1))
-	    {
-		int sav = t->ti[imin];
-		for(j=imin; j<(t->nvectors-1); j++)
-		    t->ti[j] = t->ti[j+1];
-		t->ti[t->nvectors-1] = sav;
-	    }
-	}
-	
-	
-	iterator_sz = itr+1;
-	if (iterator_sz > t->nvectors)	iterator_sz = t->nvectors;
-	for(i=0; i<iterator_sz; i++)
-	    t->iterator[i] = t->ti[i];
-	int newidx = t->ti[iterator_sz-1];
-	t->vec[newidx] = itr;
-			
-	for(i=0; i<t->N; i++)
-	{
-	    t->pc_arr[newidx*t->N + i] = t->pc[i];
-	    t->v_arr[newidx*t->N + i] = t->Av[i];
-	}
-				
-	double nv = 0;
-	for(i=0; i<t->N; i++)
-	    nv += t->Av[i]*t->Av[i];
-	//printf("1-t->ccov = %lf, nv = %lf, 1+(t->ccov/(1-t->ccov))*nv = %lf\n", 1-t->ccov, nv, 1+(t->ccov/(1-t->ccov))*nv); 
-	t->Nj_arr[newidx] = (sqrt(1-t->ccov)/nv)*(sqrt(1+(t->ccov/(1-t->ccov))*nv)-1);
-	t->Lj_arr[newidx] = (1/(sqrt(1-t->ccov)*nv))*(1-(1/sqrt(1+((t->ccov)/(1-t->ccov))*nv)));
-
-	if (itr > 0)
-	{
 	    for(i=0; i<t->lambda; i++)
-	    {
-		t->mixed[i] = t->arfitness[i];
-		t->mixed[t->lambda+i] = t->prev_arfitness[i];
+	        t->prev_arfitness[i] = t->arfitness[i];
+	    			
+	    if (t->arfitness[0] < t->target_f) {
+	      stop = 1;
+	      printf("arfitness is small adequately\n");
 	    }
-	    myqsort(2*t->lambda, t->mixed, t->ranks, t->arr_tmp);
-	    double meanprev = 0;
-	    double meancur = 0;
-	    for(i=0; i<2*t->lambda; i++)
-		t->ranks_tmp[i] = t->ranks[i];
-	    for(i=0; i<2*t->lambda; i++)
-		t->ranks[t->ranks_tmp[i]] = i;
-	    for(i=0; i<t->lambda; i++)
-	    {
-		meanprev = meanprev + t->ranks[i];
-		meancur = meancur + t->ranks[t->lambda + i];
+	    if (counteval >= t->maxevals) {
+	        stop = 1;
+	        printf("evaluation is max times\n");
 	    }
-	    meanprev = meanprev / t->lambda;
-	    meancur = meancur / t->lambda;
-	    double diffv = (meancur - meanprev)/t->lambda;
-	    double z1 = diffv - t->val_target;
-	    s = (1-t->c_s)*s + t->c_s*z1;
-	    double d_s = 1;//2.0*(t->N-1.0)/t->N;
-	    for(i=0;i<t->N;++i)
-		t->sigma[i] = t->sigma[i] * exp(s/d_s);
-	}
-
-	for(i=0; i<t->lambda; i++)
-	    t->prev_arfitness[i] = t->arfitness[i];
-				
-	if (t->arfitness[0] < t->target_f){
-	  stop = 1;
-	  printf("arfitness is small adequately\n");
-	}
-	if (counteval >= t->maxevals){
-	    stop = 1;
-	    printf("evaluation is max times\n");
-	}
-	itr = itr + 1;
-	for(i=0;i<t->N;++i){	
-	  if (t->sigma[i] < 1e-20){
-	    stop = 1;
-	    printf("sigma is small adequately\n");
-	  }
-	  if(t->sigma[i] > 10000000){
-	    t->sigma[i] = 80000;
-	  }
-	  if(loop_count%100==0){
-	    t->sigma[i] = 10.0;
-	  }
-	}
-	if ((t->printToFile == 1) && (pFile))
-	    fprintf(pFile,"%d %g\n",counteval,BestF);
-	/* if(counteval >= (t->lambda * t->N * 5)){ */
-	/*     printf("#fbest: %lf\n", BestF); */
-	/*     my_boundary_transformation(&my_boundaries, t->xbestever, t->x_temp, 0); */
-	/*     printGene(stdout, t->x_temp, t->N);  */
-	/*     printf("\n"); */
-	/* } */
-	if(stop==1){
-	    t->flg_termination = 1;
-	}
-	loop_count++;
-    // printf("############## TIMES LOOP FINISH ################ \n");
-	printf("%d times loop finish. fbest = %lf\n", loop_count, BestF);
-	//t->flg_termination=1;
-	MPI_Bcast(&t->flg_termination, 1, MPI_DOUBLE, 0, t->spawn_comm);
-	//break;
+	    itr = itr + 1;
+	    for(i=0;i<t->N;++i){	
+	      if (t->sigma[i] < 1e-20) {
+	        stop = 1;
+	        printf("sigma is small adequately\n");
+	      }
+	      if(t->sigma[i] > 10000000) {
+	        t->sigma[i] = 80000;
+	      }
+	      if(loop_count%100==0){
+	        t->sigma[i] = 10.0;
+	      }
+	    }
+	    if ((t->printToFile == 1) && (pFile))
+	        fprintf(pFile,"%d %g\n",counteval,BestF);
+	    // if(counteval >= (t->lambda * t->N * 5)){}
+	    if(BestF!=BestF_past){ 
+	        printf("#fbest: %lf\n", BestF); 
+	        my_boundary_transformation(&my_boundaries, t->xbestever, t->x_temp, 0); 
+	        printGene(stdout, t->x_temp, t->N);  
+	        printf("\n"); 
+	    } 
+	    if(stop==1){
+	        t->flg_termination = 1;
+	    }
+	    loop_count++;
+	    printf("%d times loop finish. fbest = %lf\n", loop_count, BestF);
+	    //t->flg_termination=1;
+	    MPI_Bcast(&t->flg_termination, 1, MPI_DOUBLE, 0, t->spawn_comm);
+	    //break;
     }
     //t->flg_termination = 1;
+    fclose(fp_output);
 
     
     printf("#fbest: %lf\n", BestF);
     my_boundary_transformation(&my_boundaries, t->xbestever, t->x_temp, 0);
     printGene(stdout, t->x_temp, t->N);
+
     FILE *fp_result;
-    if((fp_result=fopen("result.txt", "w"))==NULL){
-      printf("file open error occurs @fp_result\n");
+    char estimated_parameter_file_path[256];
+    sprintf(estimated_parameter_file_path, "%s/estimated_parameter.txt", t->output_dir_path);
+    fp_result = fopen(estimated_parameter_file_path, "w");
+    for(i=0; i<t->N; ++i) {
+        fprintf(fp_result, "%f\t", t->x_temp[i]);
     }
-    printGene2(fp_result, t->x_temp, t->N);
     fclose(fp_result);
+
+    // if((fp_result=fopen(estimated_parameter_file_path, "w"))==NULL){
+    //   printf("file open error occurs @fp_result\n");
+    // }
+    // printGene2(fp_result, t->x_temp, t->N);
     printf("\n");
     fflush(stdout);
     my_boundary_transformation_exit(&my_boundaries);
@@ -899,7 +880,7 @@ void LMCMA(mplmcma_t *t)
     t->output[1] = BestF;
 	
     if (t->printToFile == 1)
-	fclose(pFile);
+	    fclose(pFile);
 	
     random_exit(&gt.ttime);
     free_gt(&gt);
@@ -917,20 +898,20 @@ int loadRangeFile(char *filename, double *xmin_vec, double *xmax_vec, int *N){
 
     FILE *fp=NULL;
     if((fp=fopen(filename, "r"))==NULL){
-        printf("file open error\n");
-        exit(EXIT_FAILURE);
+	printf("file open error\n");
+	exit(EXIT_FAILURE);
     }
     while( fgets(buf, TEXT_BUFFER_SIZE, fp) != NULL){
-        if(strncmp(buf, "#", 1) == 0){ continue;}
-        sscanf(buf, "%*s\t%lf\t%lf\t%*lf\t%d\n", &lowerBounds[dimension], &upperBounds[dimension], &flg_log[dimension]);
-        //flg_log[dimension] = (unsigned char)atoi((const char*)&flg_log[dimension]);
-        dimension++;//make the dimension information here
+	if(strncmp(buf, "#", 1) == 0){ continue;}
+	sscanf(buf, "%*s\t%lf\t%lf\t%*lf\t%d\n", &lowerBounds[dimension], &upperBounds[dimension], &flg_log[dimension]);
+	//flg_log[dimension] = (unsigned char)atoi((const char*)&flg_log[dimension]);
+	dimension++;//make the dimension information here
     }
     *N = dimension;
     for(i=0;i<(*N);++i){
-        xmin_vec[i] = lowerBounds[i];
-        xmax_vec[i] = upperBounds[i];
-        printf("lowerBounds[%d] = %lf, upperBounds[%d] = %lf, flg_log[%d] = %d\n", i, lowerBounds[i], i, upperBounds[i], i, flg_log[i]);
+	xmin_vec[i] = lowerBounds[i];
+	xmax_vec[i] = upperBounds[i];
+	printf("lowerBounds[%d] = %lf, upperBounds[%d] = %lf, flg_log[%d] = %d\n", i, lowerBounds[i], i, upperBounds[i], i, flg_log[i]);
     }
     fclose(fp);
     return 0;

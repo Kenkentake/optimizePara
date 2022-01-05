@@ -41,6 +41,12 @@ int main(int argc, char **argv){
     double output[2];
 
     char range_filename[256] = "../data/params_onlyWeight.txt";
+    char results_path[256] = "results/";
+    char job_name[256];
+    char results_dir[256];
+    char config_path[256];
+    FILE *fp_config;
+
     mplmcma_t t;
 
     MPI_Init(&argc, &argv);
@@ -73,8 +79,9 @@ int main(int argc, char **argv){
       dim_con_mat = atoi(argv[7]);
       sprintf(connection_data, "%s", argv[8]);
       sprintf(range_filename, "%s", argv[9]);
+      sprintf(job_name, "%s", argv[10]);
     }
-    
+    printf("job_name is %s\n", job_name);
     printf("range_filename is %s\n", range_filename);
     loadRangeFile(range_filename, xmin_tmp, xmax_tmp, &t.N);
     N = t.N;
@@ -110,9 +117,9 @@ int main(int argc, char **argv){
     t.maxsteps = maxsteps = nvectors;
     t.cc = cc = (double)(1.0/(double)nvectors);
     t.ccov = ccov = 1/(10*log((double)N+1.0));
-    maxevals *= lambda;
-    t.maxevals *= lambda;
-    printf("N = %d, lambda = %d, mu = %d\n", N, lambda, mu);
+    // maxevals *= lambda;
+    // t.maxevals *= lambda;
+    printf("N = %d, lambda = %d, mu = %d, maxevals = %d, t.maxevals = %d\n", N, lambda, mu, maxevals, t.maxevals);
     sprintf(spawn_argv[0], "%d", num_of_pop_per_child);
     sprintf(spawn_argv[1], "%d", N);
     sprintf(spawn_argv[2], "%d", num_of_nrn_procs);
@@ -149,7 +156,20 @@ int main(int argc, char **argv){
     printf("spawn_argv[6] = %s\n", spawn_argv[6]);
     printf("#################################################################\n");
 
-    printf("start comm spawn\n");
+    // create config file
+    sprintf(results_dir, "%s%s", results_path, job_name);
+    sprintf(config_path, "%s/config.dat", results_dir);
+    fp_config = fopen(config_path, "w");
+    fprintf(fp_config, "# Num_of_pop, Mu, Max_Eval(= generatoion * num_of_pop), Num_of_child_procs, Num_of_grandchild_procs, Dim_con_mat, Con_mat_file_name, Parameter_file\n");
+    fprintf(fp_config, "%d %d %d %d %d %d %s %s\n",
+            lambda, mu, maxevals, spawn_numprocs, num_of_nrn_procs, dim_con_mat,
+            connection_data, range_filename);
+    fclose(fp_config);
+
+    // pass output file path
+    t.output_dir_path = results_dir;
+
+    // printf("start comm spawn\n");
     MPI_Comm_spawn(command, spawn_argv, spawn_numprocs, MPI_INFO_NULL, 0, MPI_COMM_SELF, &intercomm, MPI_ERRCODES_IGNORE);
     MPI_Intercomm_merge(intercomm, 0, &spawn_comm);
     MPI_Comm_size(spawn_comm, &spawn_size);
