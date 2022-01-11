@@ -33,16 +33,37 @@ printf("######### 001 p_mkcells (pc.id = %d)\n", pc.id)
 p_mkcells("../hocfile_for86/list/neuronlist_86.txt", 0)
 
 
-proc minimumnetstim(){ local i  localobj namesf strdef tmp
+proc minimumnetstim(){ local i, j  localobj namesf strdef tmp
     namesf = new StringFunctions()
 
     for(i = 0; i < cells.count(); i += 1){
 	    tmp = cellnames.o(i).s
-	    p_mkstim_ic(0, 1, 1, 1000, 0)
-	    if(namesf.substr(tmp, "orn") != -1){
-	        p_mkstim_ic(pc.nhost * i + pc.id, 500, 1, 200, 0)
-	        // print  pc.nhost * i + pc.id
-	    }
+	    // p_mkstim_ic(0, 1, 1, 1000, 0)
+            
+        // for(j=0;j<10;j+=5){
+        //     p_mkstim_ic(j, 30, 1, 300, 0)
+        // }
+         
+        // for(j=0;j<40;j+=1){
+        //     p_mkstim_ic(j, 30, 1, 1000, 0)
+        // }
+
+        // for(j=0;j<50;j+=1){
+        //     p_mkstim_ic(j, 1, 1, 1000, 0)
+        // }
+
+        // for(j=0;j<86;j+=1){
+        //     p_mkstim_ic(j, k, 100, 1000, 0)
+        // }
+        for(j=0;j<10;j+=5){
+            p_mkstim_ic(j, 30, 1, 300, 0)
+        }
+
+        // this is for mori's experiment
+	    // if(namesf.substr(tmp, "orn") != -1){
+	    //     p_mkstim_ic(pc.nhost * i + pc.id, 500, 1, 200, 0)
+	    //     // print  pc.nhost * i + pc.id
+	    // }
     }
 }
 minimumnetstim()
@@ -201,12 +222,7 @@ load_file("../hocfile_for86/record.hoc") //TODO: copy and modify!
 
 
 func receiveInfoAndPassData() { local root, num_of_pop_per_split localobj vec
-    root = 0 // (got time out job error)
-    // got no error in case of root = 1
-
-    // 2021/11/29
-    // root = 1
-
+    root = 0 
     vec = new Vector(3)
     pc.broadcast(vec, root)
     num_of_pop_per_split = int(vec.x(0))
@@ -342,6 +358,8 @@ proc update_weight(){local i, j, syn_count, cell_count, start_idx localobj updat
     for i=0, NCELLS - 1{
 	    if(pc.gid_exists(i)){
 	        for j=0, NCELLS - 1{
+                // add if 
+                // if(num_synapse_mat.x[i][j] != 0){
                 printf("num_synapse_mat.x[%d][%d] is %d\n", i, j, num_synapse_mat.x[i][j])
 	    	    for k=0, num_synapse_mat.x[i][j] - 1{
                     printf("i is %d\n", i)
@@ -352,6 +370,8 @@ proc update_weight(){local i, j, syn_count, cell_count, start_idx localobj updat
 	    	        printf("nclist_chemi.o(%d).weight = %lf\n", syn_count, nclist_chemi.o(syn_count).weight)
 	    	        syn_count += 1
 	    	    }
+                // add if
+                // }
 	        }
 	        cell_count += 1
 	    }
@@ -376,7 +396,7 @@ proc execSimulation(){ local i, root, fitness, tempfit, flg_cmaes_terminate, num
     printf("######### 004 receiveInfoAndPassData (pc.id = %d)\n", pc.id)
     num_of_pop_per_procs = receiveInfoAndPassData()
     
-    // root = 0
+    root = 0
     nullvec = new Vector()
     tempvec = new Vector()
     // tempvec = new Vector(1)
@@ -404,7 +424,6 @@ proc execSimulation(){ local i, root, fitness, tempfit, flg_cmaes_terminate, num
     {stdinit()}
     //setNetStimTest(NCELL)
     
-        
     loop_counter = 0
     
     while(1){
@@ -455,8 +474,6 @@ proc execSimulation(){ local i, root, fitness, tempfit, flg_cmaes_terminate, num
 	        {setSpikeRecord(NCELLS)}
 	        
 	        stdinit()
-	        
-	        
 	        
 	        //TODO: need to change
 	        //	    pc.psolve(timestep)//timestep = tstop in original file
@@ -571,6 +588,7 @@ elapse_time = startsw()
 //prun()
 printf("######### 003 execSimulation (pc.id = %d)\n", pc.id)
 {execSimulation(NUM_OF_POP_PER_PROCS, DIM_CMAES / pc.nhost, 0, tstop, 0)}
+// {writeFiles(pc.id, pc.nhost, NCELLS)}
 elapse_time = startsw() - elapse_time
 printf("elapse time is %g\n", elapse_time)
 //------------------------------

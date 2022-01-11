@@ -287,7 +287,9 @@ proc geom() {
 
 proc biophys() {
     forall {
+        // 軸方向の抵抗
  	    Ra = 50
+        // キャパシタンス
  	    cm = 2
         insert hh
     }
