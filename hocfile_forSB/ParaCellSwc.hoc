@@ -62,8 +62,10 @@ proc p_mkcells() { local i, j, cellnum localobj cell, namestring, nc, datafile s
     // $2 :parallel(0) or serial(1) 
     // 
     
-    s_gen = 0
-
+    // s_gen = 0
+    s_gen = 1000
+    // 振ってみる 1000 ? 全ての細胞で同じコンパートメント番号
+        
     cells = new List()    
     cellnames = new List()
     spikegens = new Vector()

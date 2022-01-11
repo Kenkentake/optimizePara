@@ -4,6 +4,9 @@
 // Yusuke Mori
 //*************************
 
+// {if(!name_declared("COLOR")){ COLOR=-1  }}
+
+
 //--- for debug ---
 debugon = 0
 if (debugon) {
@@ -30,20 +33,28 @@ allvm = new Vector()
 // make cells
 // (code is in ParaCellSwc.hoc)
 printf("######### 001 p_mkcells (pc.id = %d)\n", pc.id)
-// p_mkcells("../hocfile_forSB/list/neuronlist_86.txt", 0)
 p_mkcells("../hocfile_forSB/list/neuronlist_6.txt", 0)
 
 
-proc minimumnetstim(){ local i  localobj namesf strdef tmp
+// check hikitugi.hoc
+proc minimumnetstim(){ local i, j  localobj namesf strdef tmp
     namesf = new StringFunctions()
 
     for(i = 0; i < cells.count(); i += 1){
 	    tmp = cellnames.o(i).s
-	    p_mkstim_ic(0, 1, 1, 1000, 0)
-	    if(namesf.substr(tmp, "orn") != -1){
-	        p_mkstim_ic(pc.nhost * i + pc.id, 500, 1, 200, 0)
-	        // print  pc.nhost * i + pc.id
-	    }
+	    // p_mkstim_ic(0, 1, 1, 1000, 0)
+	    p_mkstim_ic(0, 30, 1, 300, 0)
+	    p_mkstim_ic(1, 30, 1, 300, 0)
+	    p_mkstim_ic(2, 30, 1, 300, 0)
+
+        // for(j=0;j<NCELLS;j+=1){
+        //     p_mkstim_ic(j, 1, 300, 1000, 0)
+        // }
+
+	    // if(namesf.substr(tmp, "orn") != -1){
+	    //     p_mkstim_ic(pc.nhost * i + pc.id, 500, 1, 200, 0)
+	    //     // print  pc.nhost * i + pc.id
+	    // }
     }
 }
 minimumnetstim()
@@ -182,6 +193,7 @@ recordBin = 62.5 //default 125 in single compartment implementation
 numFitLoop = tstop / recordBin  // 8 = 500 / 62.5
 objref fittingVec
 fittingVec = new Vector(numFitLoop - 2)
+// fittingVec = new Vector(numFitLoop - 1)
 
 HIGH_F = 80
 LOW_F = 24
@@ -225,6 +237,7 @@ func evalFitness(){ local sum, scaleFactor, n, i, tmpFreq localobj hoge
     // calc the fitness here under construction
     // changed 2022/1/2
     // if(pc.gid_exists(0)){// temporary set 0
+    printf("fittingVec.size is %d\n", fittingVec.size())
     if(pc.gid_exists(5)){// temporary set 0
 	    for i = 0, fittingVec.size() - 1  {
 	        tmpFreq = getFreq(recordBin * i, recordBin * 2)//250ms bin overlapped each 125ms
@@ -423,7 +436,7 @@ proc execSimulation(){ local i, root, fitness, tempfit, flg_cmaes_terminate, num
 	    send_fit_vec2 = new Vector(num_of_pop_per_procs)
 	    
 	    //printf("num_of_pop_per_procs in execSimulation (in hocfile) is %d\n", num_of_pop_per_procs)
-	    // printf("num_of_pop_per_procs = %d\n", num_of_pop_per_procs)
+	    printf("num_of_pop_per_procs = %d\n", num_of_pop_per_procs)
 	    //recieve weight data
 	    pc.scatter_d(nullvec, rcv_pop_vec_weight, dim_cmaes * num_of_pop_per_procs, root)
 	    printf("rcv_pop_vec_weight.size = %d\n", rcv_pop_vec_weight.size())
@@ -456,8 +469,6 @@ proc execSimulation(){ local i, root, fitness, tempfit, flg_cmaes_terminate, num
 	        {setSpikeRecord(NCELLS)}
 	        
 	        stdinit()
-	        
-	        
 	        
 	        //TODO: need to change
 	        //	    pc.psolve(timestep)//timestep = tstop in original file
@@ -572,6 +583,7 @@ elapse_time = startsw()
 //prun()
 printf("######### 003 execSimulation (pc.id = %d)\n", pc.id)
 {execSimulation(NUM_OF_POP_PER_PROCS, DIM_CMAES / pc.nhost, 0, tstop, 0)}
+// writeFiles(pc.id, pc.nhost, NCELLS)
 elapse_time = startsw() - elapse_time
 printf("elapse time is %g\n", elapse_time)
 //------------------------------
